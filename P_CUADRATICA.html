@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programación Cuadrática — Solver</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Lato', sans-serif;
+  background: #f0edf8;
+  min-height: 100vh;
+  padding: 28px 16px 60px;
+  color: #2d2440;
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.page-title h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #2d2440;
+  letter-spacing: -0.01em;
+}
+
+.page-title p {
+  font-size: 0.85rem;
+  color: #7a6fa0;
+  margin-top: 4px;
+}
+
+/* PROBLEM CARD — exactly like the image */
+.problem-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 20px rgba(100,80,160,0.10);
+  max-width: 660px;
+  margin: 0 auto 28px;
+  overflow: hidden;
+}
+
+.card-header {
+  background: #ede8f7;
+  padding: 14px 24px;
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #4a3580;
+  border-bottom: 1px solid #ddd6f3;
+}
+
+.card-body {
+  padding: 24px 28px 28px;
+}
+
+.problem-desc {
+  font-size: 0.92rem;
+  color: #5a4d7a;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* BRACE BLOCK — like the image */
+.brace-block {
+  display: flex;
+  gap: 0;
+  margin: 0 0 18px 0;
+  align-items: stretch;
+}
+
+.brace-symbol {
+  font-size: 2.8rem;
+  color: #4a3580;
+  line-height: 1;
+  padding: 0 6px 0 0;
+  display: flex;
+  align-items: center;
+  font-weight: 300;
+  font-family: 'Source Serif 4', serif;
+}
+
+.brace-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+  flex: 1;
+}
+
+/* EDITABLE EQUATION */
+.eq-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.eq-label {
+  font-family: 'Source Serif 4', serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: #2d2440;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.eq-part {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.coef-input {
+  width: 52px;
+  border: none;
+  border-bottom: 2px solid #b8a8e8;
+  background: transparent;
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 1rem;
+  color: #4a3580;
+  font-weight: 600;
+  padding: 1px 2px;
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+}
+
+.coef-input:focus { border-bottom-color: #7c5cbf; background: #f5f0ff; border-radius: 4px 4px 0 0; }
+.coef-input::-webkit-outer-spin-button,
+.coef-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.var-label {
+  font-family: 'Source Serif 4', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: #2d2440;
+}
+
+.var-label sup, .var-label sub {
+  font-size: 0.65em;
+}
+
+.op-label {
+  font-size: 0.95rem;
+  color: #4a3580;
+  padding: 0 3px;
+  font-weight: 700;
+}
+
+/* CONSTRAINT SECTION */
+.section-label-small {
+  font-size: 0.78rem;
+  color: #9086b4;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 16px 0 8px;
+}
+
+.constraint-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.constraint-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sign-label {
+  font-size: 0.88rem;
+  color: #6b5ea0;
+  font-weight: 700;
+  padding: 0 2px;
+}
+
+.rhs-input {
+  width: 60px;
+  border: none;
+  border-bottom: 2px solid #b8a8e8;
+  background: transparent;
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 1rem;
+  color: #4a3580;
+  font-weight: 600;
+  padding: 1px 2px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.rhs-input:focus { border-bottom-color: #7c5cbf; }
+.rhs-input::-webkit-outer-spin-button,
+.rhs-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.nonneg-label {
+  font-size: 0.88rem;
+  color: #7a6fa0;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ADD/REMOVE constraint */
+.add-constraint-btn {
+  background: none;
+  border: 1.5px dashed #b8a8e8;
+  color: #9086b4;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-family: 'Lato', sans-serif;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-constraint-btn:hover { background: #f5f0ff; border-color: #7c5cbf; color: #4a3580; }
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #c0aee8;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.remove-btn:hover { color: #e55353; }
+
+/* OBJECTIVE TYPE */
+.obj-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: 10px;
+  border: 1.5px solid #ddd6f3;
+  background: #faf8ff;
+  color: #9086b4;
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.toggle-btn.active {
+  background: #7c5cbf;
+  border-color: #7c5cbf;
+  color: white;
+}
+
+/* SOLVE BUTTON */
+.solve-btn {
+  width: 100%;
+  padding: 15px;
+  background: #7c5cbf;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.solve-btn:hover { background: #6a4baa; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,92,191,0.3); }
+.solve-btn:active { transform: translateY(0); }
+
+/* EXAMPLES BAR */
+.examples-bar {
+  max-width: 660px;
+  margin: 0 auto 22px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.examples-bar span {
+  font-size: 12px;
+  color: #9086b4;
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.example-pill {
+  background: white;
+  border: 1.5px solid #ddd6f3;
+  color: #6b5ea0;
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.example-pill:hover, .example-pill.active { background: #7c5cbf; color: white; border-color: #7c5cbf; }
+
+/* SOLUTION CARD */
+.solution-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 20px rgba(100,80,160,0.10);
+  max-width: 660px;
+  margin: 0 auto;
+  overflow: hidden;
+  display: none;
+  animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+.solution-card.visible { display: block; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sol-header {
+  background: #7c5cbf;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sol-header-title {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.05rem;
+  color: white;
+  font-weight: 600;
+}
+
+.sol-badge {
+  margin-left: auto;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.sol-body {
+  padding: 24px 28px;
+}
+
+/* ANSWER BOX */
+.answer-box {
+  background: #f5f0ff;
+  border: 1.5px solid #c8b8f0;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.answer-box .answer-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #9086b4;
+  margin-bottom: 12px;
+}
+
+.answer-values {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.answer-val {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.answer-val .val-name {
+  font-family: 'Source Serif 4', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #7a6fa0;
+}
+
+.answer-val .val-num {
+  font-family: 'Source Serif 4', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #4a3580;
+  line-height: 1;
+}
+
+.answer-val.highlight .val-num { color: #7c5cbf; }
+
+/* STEPS */
+.steps-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #9086b4;
+  margin-bottom: 16px;
+}
+
+.step-block {
+  margin-bottom: 20px;
+  border-left: 3px solid #ddd6f3;
+  padding-left: 18px;
+}
+
+.step-block.active-step { border-left-color: #7c5cbf; }
+
+.step-num-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #9086b4;
+  margin-bottom: 6px;
+}
+
+.step-block.active-step .step-num-title { color: #7c5cbf; }
+
+.step-text {
+  font-size: 0.9rem;
+  color: #4a3580;
+  line-height: 1.65;
+}
+
+.step-formula {
+  background: #f5f0ff;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'Source Serif 4', serif;
+  font-size: 0.92rem;
+  color: #2d2440;
+  margin-top: 8px;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+.step-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.85rem;
+}
+
+.step-table th {
+  background: #ede8f7;
+  color: #4a3580;
+  font-weight: 700;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.step-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #ede8f7;
+  color: #2d2440;
+  font-family: 'Source Serif 4', serif;
+}
+
+.step-table tr:last-child td { border-bottom: none; }
+.step-table tr.best-row td { background: #f5f0ff; color: #4a3580; font-weight: 700; }
+
+/* PLOT CANVAS */
+.plot-wrap {
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid #ddd6f3;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+}
+
+/* SPINNER */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* HINT TEXT */
+.hint {
+  font-size: 0.78rem;
+  color: #b0a0d0;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ===== THEORY SECTION ===== */
+.theory-section {
+  max-width: 660px;
+  margin: 0 auto 32px;
+}
+
+.theory-toggle {
+  width: 100%;
+  background: white;
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 2px 16px rgba(100,80,160,0.10);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  transition: box-shadow 0.2s;
+  margin-bottom: 0;
+}
+
+.theory-toggle:hover { box-shadow: 0 4px 24px rgba(100,80,160,0.16); }
+
+.theory-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.theory-icon {
+  width: 38px; height: 38px;
+  background: #ede8f7;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.theory-toggle-left h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d2440;
+  margin-bottom: 2px;
+}
+
+.theory-toggle-left p {
+  font-size: 0.78rem;
+  color: #9086b4;
+}
+
+.theory-chevron {
+  font-size: 1.1rem;
+  color: #9086b4;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+
+.theory-chevron.open { transform: rotate(180deg); }
+
+.theory-body {
+  display: none;
+  background: white;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 4px 20px rgba(100,80,160,0.10);
+  overflow: hidden;
+  animation: expandDown 0.3s ease;
+}
+
+.theory-body.open { display: block; }
+
+@keyframes expandDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tabs inside theory */
+.theory-tabs {
+  display: flex;
+  border-bottom: 1px solid #ede8f7;
+  overflow-x: auto;
+}
+
+.theory-tab {
+  padding: 13px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #9086b4;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: 'Lato', sans-serif;
+}
+
+.theory-tab:hover { color: #4a3580; }
+.theory-tab.active { color: #7c5cbf; border-bottom-color: #7c5cbf; }
+
+.theory-panel { display: none; padding: 24px 28px 28px; }
+.theory-panel.active { display: block; animation: fadePanel 0.25s ease; }
+
+@keyframes fadePanel { from{opacity:0} to{opacity:1} }
+
+/* Content blocks inside theory */
+.th-intro {
+  font-size: 0.93rem;
+  color: #4a3580;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.th-highlight {
+  background: #f5f0ff;
+  border-left: 4px solid #7c5cbf;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+  color: #2d2440;
+  line-height: 1.6;
+}
+
+.th-highlight strong { color: #7c5cbf; }
+
+.th-formula {
+  background: #faf8ff;
+  border: 1.5px solid #ddd6f3;
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-family: 'Source Serif 4', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: #2d2440;
+  line-height: 2;
+  margin: 14px 0;
+  text-align: center;
+}
+
+.th-formula span { font-style: normal; font-size: 0.78rem; color: #9086b4; display: block; margin-top: 4px; }
+
+.th-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+@media(max-width:500px){ .th-cards { grid-template-columns: 1fr; } }
+
+.th-card {
+  background: #faf8ff;
+  border: 1.5px solid #ddd6f3;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.th-card .th-card-icon { font-size: 22px; margin-bottom: 8px; }
+.th-card h4 { font-size: 0.88rem; font-weight: 700; color: #4a3580; margin-bottom: 5px; }
+.th-card p  { font-size: 0.82rem; color: #7a6fa0; line-height: 1.5; }
+
+.th-steps { margin: 12px 0; }
+
+.th-step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.th-step-num {
+  width: 28px; height: 28px;
+  background: #7c5cbf;
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.th-step-content h4 { font-size: 0.88rem; font-weight: 700; color: #2d2440; margin-bottom: 3px; }
+.th-step-content p  { font-size: 0.83rem; color: #7a6fa0; line-height: 1.55; }
+
+.th-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  margin: 14px 0;
+}
+
+.th-compare th {
+  background: #ede8f7;
+  color: #4a3580;
+  font-weight: 700;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.th-compare td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f0edf8;
+  color: #4a3580;
+  vertical-align: top;
+}
+
+.th-compare tr:last-child td { border-bottom: none; }
+.th-compare tr:nth-child(even) td { background: #faf8ff; }
+.th-compare td:first-child { font-weight: 700; color: #7c5cbf; }
+
+.th-apps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+@media(max-width:500px){ .th-apps { grid-template-columns: 1fr; } }
+
+.th-app {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: #faf8ff;
+  border: 1.5px solid #ddd6f3;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.th-app-icon { font-size: 20px; flex-shrink: 0; }
+.th-app h4  { font-size: 0.82rem; font-weight: 700; color: #4a3580; margin-bottom: 2px; }
+.th-app p   { font-size: 0.78rem; color: #9086b4; line-height: 1.4; }
+
+.th-tip {
+  background: #fff8ec;
+  border: 1.5px solid #f5d58a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.86rem;
+  color: #7a5c10;
+  margin: 14px 0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.th-tip-icon { font-size: 18px; flex-shrink: 0; }
+
+.section-sep {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #b8a8e8;
+  margin: 20px 0 10px;
+}
+
+/* DIVIDER */
+.divider {
+  border: none;
+  border-top: 1px solid #ede8f7;
+  margin: 20px 0;
+}
+
+/* INFEASIBLE */
+.error-box {
+  background: #fff0f0;
+  border: 1.5px solid #f0c0c0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: #a03030;
+  font-size: 0.9rem;
+}
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>5.5 Programación Cuadrática</h1>
+  <p>Ingresa los datos del problema tal como aparece en tu libro o apuntes</p>
+</div>
+
+<!-- ===== THEORY SECTION ===== -->
+<div class="theory-section">
+
+  <button class="theory-toggle" onclick="toggleTheory()">
+    <div class="theory-toggle-left">
+      <div class="theory-icon">📖</div>
+      <div>
+        <h2>¿Qué es la Programación Cuadrática?</h2>
+        <p>Teoría, fórmulas, método de solución y aplicaciones · Toca para expandir</p>
+      </div>
+    </div>
+    <div class="theory-chevron" id="theory-chevron">▼</div>
+  </button>
+
+  <div class="theory-body" id="theory-body">
+
+    <div class="theory-tabs">
+      <button class="theory-tab active" onclick="showTab('tab-que')">¿Qué es?</button>
+      <button class="theory-tab" onclick="showTab('tab-forma')">Forma general</button>
+      <button class="theory-tab" onclick="showTab('tab-metodo')">Cómo se resuelve</button>
+      <button class="theory-tab" onclick="showTab('tab-apps')">¿Para qué sirve?</button>
+      <button class="theory-tab" onclick="showTab('tab-vs')">PC vs PL</button>
+    </div>
+
+    <!-- TAB 1: ¿QUÉ ES? -->
+    <div class="theory-panel active" id="tab-que">
+      <p class="th-intro">
+        La <strong>Programación Cuadrática (PC)</strong> es un método de optimización matemática donde la función objetivo
+        tiene términos al <em>cuadrado</em> (como x₁² o x₂²), mientras que las restricciones siguen siendo lineales,
+        igual que en la Programación Lineal normal.
+      </p>
+      <div class="th-highlight">
+        <strong>En palabras simples:</strong> es como la Programación Lineal, pero la función Z que quieres maximizar
+        o minimizar tiene términos cuadráticos. Esto hace que la "superficie" de Z sea una parábola o un tazón,
+        en lugar de un plano inclinado.
+      </div>
+      <div class="th-cards">
+        <div class="th-card">
+          <div class="th-card-icon">📈</div>
+          <h4>Función objetivo curva</h4>
+          <p>Contiene x₁², x₂² o términos cruzados x₁·x₂. Esto crea una forma parabólica en el espacio.</p>
+        </div>
+        <div class="th-card">
+          <div class="th-card-icon">📏</div>
+          <h4>Restricciones lineales</h4>
+          <p>Las restricciones siguen siendo líneas rectas, igual que en PL: ax₁ + bx₂ ≤ c.</p>
+        </div>
+        <div class="th-card">
+          <div class="th-card-icon">🎯</div>
+          <h4>Óptimo interior</h4>
+          <p>A diferencia de PL, el óptimo puede estar dentro de la región factible, no solo en los vértices.</p>
+        </div>
+        <div class="th-card">
+          <div class="th-card-icon">⚖️</div>
+          <h4>Rendimientos decrecientes</h4>
+          <p>Los términos cuadráticos negativos modelan situaciones donde producir más tiene costos crecientes.</p>
+        </div>
+      </div>
+      <div class="th-tip">
+        <div class="th-tip-icon">💡</div>
+        <div>En los problemas de tu materia, los términos −x₁² y −x₂² representan <strong>rendimientos decrecientes</strong>:
+        producir cada unidad extra es menos rentable que la anterior, como en una empresa que satura el mercado.</div>
+      </div>
+    </div>
+
+    <!-- TAB 2: FORMA GENERAL -->
+    <div class="theory-panel" id="tab-forma">
+      <p class="th-intro">Todo problema de Programación Cuadrática tiene esta estructura estándar:</p>
+
+      <div class="section-sep">Función objetivo</div>
+      <div class="th-formula">
+        Z = c₁x₁ + c₂x₂ − q₁x₁² − q₂x₂²
+        <span>donde c₁, c₂ son coeficientes lineales y q₁, q₂ son los coeficientes cuadráticos (siempre positivos)</span>
+      </div>
+
+      <div class="th-highlight">
+        <strong>¿Por qué el signo negativo en −q₁x₁²?</strong><br>
+        En problemas de <em>maximización</em>, los coeficientes cuadráticos van negativos para que la parábola
+        "abra hacia abajo" y tenga un máximo. Si fueran positivos, la parábola abriría hacia arriba y tendría un mínimo
+        (problema de minimización).
+      </div>
+
+      <div class="section-sep">Restricciones</div>
+      <div class="th-formula">
+        a₁x₁ + a₂x₂ ≤ b &nbsp;&nbsp;(restricciones de recursos)<br>
+        x₁ ≥ 0,&nbsp; x₂ ≥ 0 &nbsp;&nbsp;(no negatividad)
+        <span>Las restricciones son siempre líneas rectas — exactamente igual que en PL</span>
+      </div>
+
+      <div class="section-sep">Ejemplo del libro</div>
+      <div class="th-formula">
+        Z = 40x₁ + 30x₂ − x₁² − x₂²<br>
+        s.a.&nbsp; x₁ + x₂ ≤ 20,&nbsp; x₁ ≥ 0,&nbsp; x₂ ≥ 0
+        <span>c₁ = 40, c₂ = 30, q₁ = 1, q₂ = 1 → máximo dentro de la región factible</span>
+      </div>
+    </div>
+
+    <!-- TAB 3: CÓMO SE RESUELVE -->
+    <div class="theory-panel" id="tab-metodo">
+      <p class="th-intro">El método más usado en Investigación de Operaciones para resolver PC se basa en
+      <strong>igualar las derivadas parciales a cero</strong> (condiciones de primer orden). El procedimiento paso a paso es:</p>
+
+      <div class="th-steps">
+        <div class="th-step">
+          <div class="th-step-num">1</div>
+          <div class="th-step-content">
+            <h4>Plantear el problema</h4>
+            <p>Identificar la función Z, los coeficientes lineales (c₁, c₂), los cuadráticos (q₁, q₂) y las restricciones.</p>
+          </div>
+        </div>
+        <div class="th-step">
+          <div class="th-step-num">2</div>
+          <div class="th-step-content">
+            <h4>Derivar e igualar a cero (sin restricciones)</h4>
+            <p>Calcular ∂Z/∂x₁ = 0 y ∂Z/∂x₂ = 0. Para Z = c₁x₁ + c₂x₂ − q₁x₁² − q₂x₂² esto da:</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="th-formula">
+        ∂Z/∂x₁ = c₁ − 2q₁x₁ = 0 &nbsp;→&nbsp; x₁* = c₁ / (2q₁)<br>
+        ∂Z/∂x₂ = c₂ − 2q₂x₂ = 0 &nbsp;→&nbsp; x₂* = c₂ / (2q₂)
+        <span>Este es el óptimo sin restricciones. Puede o no estar dentro de la región factible.</span>
+      </div>
+
+      <div class="th-steps">
+        <div class="th-step">
+          <div class="th-step-num">3</div>
+          <div class="th-step-content">
+            <h4>Verificar factibilidad</h4>
+            <p>¿El punto (x₁*, x₂*) cumple todas las restricciones? Si sí → es el óptimo global. Si no → el óptimo está en la frontera.</p>
+          </div>
+        </div>
+        <div class="th-step">
+          <div class="th-step-num">4</div>
+          <div class="th-step-content">
+            <h4>Evaluar puntos candidatos</h4>
+            <p>Evaluar Z en el punto interior (si es factible) y en los vértices de la región factible. El mayor valor es el óptimo para maximización.</p>
+          </div>
+        </div>
+        <div class="th-step">
+          <div class="th-step-num">5</div>
+          <div class="th-step-content">
+            <h4>Concluir</h4>
+            <p>Reportar x₁*, x₂* y el valor máximo (o mínimo) de Z*.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="th-tip">
+        <div class="th-tip-icon">📝</div>
+        <div>
+          <strong>Ejemplo rápido:</strong> Z = 40x₁ + 30x₂ − x₁² − x₂², s.a. x₁ + x₂ ≤ 20<br>
+          x₁* = 40/(2·1) = <strong>20</strong>, x₂* = 30/(2·1) = <strong>15</strong><br>
+          ¿Es (20, 15) factible? 20 + 15 = 35 > 20 → NO. El óptimo está en la restricción activa.
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: APLICACIONES -->
+    <div class="theory-panel" id="tab-apps">
+      <p class="th-intro">La Programación Cuadrática aparece en muchos campos reales porque los costos y
+      beneficios rara vez son perfectamente lineales:</p>
+
+      <div class="th-apps">
+        <div class="th-app">
+          <div class="th-app-icon">🏭</div>
+          <div>
+            <h4>Producción industrial</h4>
+            <p>Una empresa que satura el mercado obtiene menos ganancia por cada unidad adicional → función cuadrática.</p>
+          </div>
+        </div>
+        <div class="th-app">
+          <div class="th-app-icon">📊</div>
+          <div>
+            <h4>Finanzas (Markowitz)</h4>
+            <p>Minimizar el riesgo (varianza) de una cartera de inversión sujeto a un rendimiento mínimo deseado.</p>
+          </div>
+        </div>
+        <div class="th-app">
+          <div class="th-app-icon">🤖</div>
+          <div>
+            <h4>Inteligencia artificial</h4>
+            <p>El entrenamiento de máquinas de vectores de soporte (SVM) es un problema de PC.</p>
+          </div>
+        </div>
+        <div class="th-app">
+          <div class="th-app-icon">⚡</div>
+          <div>
+            <h4>Energía eléctrica</h4>
+            <p>Despacho económico: el costo de cada generador es una función cuadrática de la potencia generada.</p>
+          </div>
+        </div>
+        <div class="th-app">
+          <div class="th-app-icon">🚗</div>
+          <div>
+            <h4>Logística y transporte</h4>
+            <p>Minimización de combustible donde el consumo crece cuadráticamente con la velocidad.</p>
+          </div>
+        </div>
+        <div class="th-app">
+          <div class="th-app-icon">🌾</div>
+          <div>
+            <h4>Agricultura</h4>
+            <p>Asignar recursos (agua, fertilizante) entre cultivos cuando los rendimientos son decrecientes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: PC VS PL -->
+    <div class="theory-panel" id="tab-vs">
+      <p class="th-intro">Estas son las diferencias clave entre Programación Lineal (PL), que ya conoces, y
+      Programación Cuadrática (PC):</p>
+
+      <table class="th-compare">
+        <thead>
+          <tr><th>Característica</th><th>Prog. Lineal (PL)</th><th>Prog. Cuadrática (PC)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Función Z</td>
+            <td>Solo términos lineales (cx)</td>
+            <td>Términos cuadráticos (cx − qx²)</td>
+          </tr>
+          <tr>
+            <td>Restricciones</td>
+            <td>Líneas rectas</td>
+            <td>También líneas rectas</td>
+          </tr>
+          <tr>
+            <td>Forma de la función</td>
+            <td>Plano inclinado (recto)</td>
+            <td>Parábola / tazón curvo</td>
+          </tr>
+          <tr>
+            <td>¿Dónde está el óptimo?</td>
+            <td>Siempre en un vértice</td>
+            <td>Puede ser interior o en vértice</td>
+          </tr>
+          <tr>
+            <td>Método de solución</td>
+            <td>Simplex</td>
+            <td>Derivadas parciales + evaluación</td>
+          </tr>
+          <tr>
+            <td>Rendimientos</td>
+            <td>Constantes por unidad</td>
+            <td>Decrecientes (más realista)</td>
+          </tr>
+          <tr>
+            <td>¿Modela saturación?</td>
+            <td>No</td>
+            <td>Sí → muy útil en economía</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="th-highlight">
+        <strong>Regla práctica:</strong> Si en tu problema aparece x₁², x₂² o x₁·x₂ en la función Z → es
+        Programación Cuadrática. Si Z solo tiene términos como 5x₁ + 3x₂ → es Programación Lineal.
+      </div>
+    </div>
+
+  </div><!-- end theory-body -->
+</div><!-- end theory-section -->
+
+<!-- EXAMPLES -->
+<div class="examples-bar">
+  <span>Ejemplos:</span>
+  <button class="example-pill active" onclick="loadExample(0)">Empresa (libro)</button>
+  <button class="example-pill" onclick="loadExample(1)">Beneficio máximo</button>
+  <button class="example-pill" onclick="loadExample(2)">Dos restricciones</button>
+  <button class="example-pill" onclick="loadExample(3)">Limpio</button>
+</div>
+
+<!-- PROBLEM CARD -->
+<div class="problem-card">
+  <div class="card-header">Ingresa tu problema</div>
+  <div class="card-body">
+
+    <!-- Objective type toggle -->
+    <div class="obj-toggle">
+      <button class="toggle-btn active" id="btn-max" onclick="setObj('max')">Maximizar Z</button>
+      <button class="toggle-btn" id="btn-min" onclick="setObj('min')">Minimizar Z</button>
+    </div>
+
+    <!-- PROBLEM DESC -->
+    <div class="problem-desc" id="prob-desc">Una empresa produce dos artículos. La utilidad está dada por:</div>
+
+    <!-- OBJECTIVE FUNCTION -->
+    <div class="brace-block">
+      <div class="brace-symbol">{</div>
+      <div class="brace-content">
+        <!-- Z = a·x1 + b·x2 - c·x1² - d·x2² - e·x1·x2 -->
+        <div class="eq-row">
+          <span class="eq-label">Z =</span>
+          <input class="coef-input" type="number" id="a1" value="40" title="coeficiente de x₁">
+          <span class="var-label">x<sub>1</sub></span>
+          <span class="op-label" id="op1">+</span>
+          <input class="coef-input" type="number" id="a2" value="30" title="coeficiente de x₂">
+          <span class="var-label">x<sub>2</sub></span>
+          <span class="op-label" id="op2">−</span>
+          <input class="coef-input" type="number" id="a3" value="1" title="coeficiente de x₁²">
+          <span class="var-label">x<sub>1</sub><sup>2</sup></span>
+          <span class="op-label" id="op3">−</span>
+          <input class="coef-input" type="number" id="a4" value="1" title="coeficiente de x₂²">
+          <span class="var-label">x<sub>2</sub><sup>2</sup></span>
+        </div>
+        <p class="hint">Escribe los coeficientes con su signo incluido. Los términos cuadráticos generalmente van con signo negativo en problemas de maximización.</p>
+      </div>
+    </div>
+
+    <!-- CONSTRAINTS -->
+    <div class="section-label-small">Sujeto a:</div>
+    <div class="brace-block">
+      <div class="brace-symbol">{</div>
+      <div class="brace-content">
+
+        <div class="constraint-rows" id="constraints-rows">
+          <!-- Row inserted by JS -->
+        </div>
+
+        <button class="add-constraint-btn" onclick="addConstraint()">+ Agregar restricción</button>
+        <p class="nonneg-label" style="margin-top:10px">x<sub>1</sub> ≥ 0,&nbsp;&nbsp;x<sub>2</sub> ≥ 0</p>
+      </div>
+    </div>
+
+    <!-- SOLVE -->
+    <button class="solve-btn" onclick="solveProblem()">
+      <span id="btn-label">Mostrar respuesta correcta y explicación</span>
+      <span id="btn-spin" style="display:none"><div class="spinner"></div></span>
+    </button>
+  </div>
+</div>
+
+<!-- SOLUTION CARD -->
+<div class="solution-card" id="sol-card">
+  <div class="sol-header">
+    <div class="sol-header-title">✓ Solución paso a paso</div>
+    <div class="sol-badge" id="sol-badge">ÓPTIMO</div>
+  </div>
+  <div class="sol-body" id="sol-body">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<script>
+// =====================================================
+// THEORY TOGGLE & TABS
+// =====================================================
+function toggleTheory() {
+  const body = document.getElementById('theory-body');
+  const chev = document.getElementById('theory-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+function showTab(tabId) {
+  document.querySelectorAll('.theory-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.theory-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// =====================================================
+// STATE
+// =====================================================
+let objType = 'max';
+let constraintCount = 0;
+
+function setObj(type) {
+  objType = type;
+  document.getElementById('btn-max').classList.toggle('active', type==='max');
+  document.getElementById('btn-min').classList.toggle('active', type==='min');
+  const desc = document.getElementById('prob-desc');
+  desc.textContent = type === 'max'
+    ? 'Una empresa produce dos artículos. La utilidad está dada por:'
+    : 'Se desea minimizar el costo de producción dado por:';
+}
+
+// =====================================================
+// CONSTRAINTS
+// =====================================================
+function addConstraint(c1val=1, c2val=1, rhsval=20, signval='le') {
+  constraintCount++;
+  const id = 'c' + constraintCount;
+  const row = document.createElement('div');
+  row.className = 'constraint-row';
+  row.id = id;
+  row.innerHTML = `
+    <input class="coef-input cc1" type="number" value="${c1val}" title="coef x₁" style="width:46px">
+    <span class="var-label">x<sub>1</sub></span>
+    <span class="op-label">+</span>
+    <input class="coef-input cc2" type="number" value="${c2val}" title="coef x₂" style="width:46px">
+    <span class="var-label">x<sub>2</sub></span>
+    <select onchange="" class="sign-sel" style="border:none;border-bottom:2px solid #b8a8e8;background:transparent;color:#4a3580;font-size:0.95rem;font-family:'Source Serif 4',serif;font-style:italic;padding:1px 4px;outline:none;cursor:pointer;">
+      <option value="le" ${signval==='le'?'selected':''}>≤</option>
+      <option value="ge" ${signval==='ge'?'selected':''}>≥</option>
+      <option value="eq" ${signval==='eq'?'selected':''}>=</option>
+    </select>
+    <input class="rhs-input crhs" type="number" value="${rhsval}" title="RHS">
+    <button class="remove-btn" onclick="removeConstraint('${id}')">×</button>
+  `;
+  document.getElementById('constraints-rows').appendChild(row);
+}
+
+function removeConstraint(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function getConstraints() {
+  const rows = document.querySelectorAll('#constraints-rows .constraint-row');
+  return Array.from(rows).map(r => ({
+    c1: parseFloat(r.querySelector('.cc1').value) || 0,
+    c2: parseFloat(r.querySelector('.cc2').value) || 0,
+    rhs: parseFloat(r.querySelector('.crhs').value) || 0,
+    sign: r.querySelector('.sign-sel').value
+  }));
+}
+
+// =====================================================
+// EXAMPLES
+// =====================================================
+const EXAMPLES = [
+  {
+    desc: 'Una empresa produce dos artículos. La utilidad está dada por:',
+    obj: 'max', a1: 40, a2: 30, a3: 1, a4: 1,
+    constraints: [{c1:1,c2:1,rhs:20,sign:'le'}]
+  },
+  {
+    desc: 'Una fábrica quiere maximizar su beneficio Z:',
+    obj: 'max', a1: 5, a2: 4, a3: 0.5, a4: 0.25,
+    constraints: [{c1:1,c2:2,rhs:40,sign:'le'},{c1:2,c2:1,rhs:50,sign:'le'}]
+  },
+  {
+    desc: 'Maximizar la utilidad de dos productos con dos restricciones de recursos:',
+    obj: 'max', a1: 8, a2: 6, a3: 1, a4: 2,
+    constraints: [{c1:1,c2:1,rhs:10,sign:'le'},{c1:2,c2:1,rhs:14,sign:'le'}]
+  },
+  {
+    desc: 'Ingresa los datos de tu problema:',
+    obj: 'max', a1: 0, a2: 0, a3: 0, a4: 0,
+    constraints: [{c1:1,c2:1,rhs:0,sign:'le'}]
+  }
+];
+
+function loadExample(idx) {
+  document.querySelectorAll('.example-pill').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const ex = EXAMPLES[idx];
+  setObj(ex.obj);
+  document.getElementById('prob-desc').textContent = ex.desc;
+  document.getElementById('a1').value = ex.a1;
+  document.getElementById('a2').value = ex.a2;
+  document.getElementById('a3').value = ex.a3;
+  document.getElementById('a4').value = ex.a4;
+  document.getElementById('constraints-rows').innerHTML = '';
+  constraintCount = 0;
+  ex.constraints.forEach(c => addConstraint(c.c1, c.c2, c.rhs, c.sign));
+  document.getElementById('sol-card').classList.remove('visible');
+}
+
+// =====================================================
+// SOLVER — Gradient / KKT for 2-variable QP
+// Objective: Z = a1*x1 + a2*x2 - a3*x1² - a4*x2²  (maximization)
+// KKT gives: ∂Z/∂x1 = a1 - 2*a3*x1 = 0 → x1* = a1/(2*a3)
+//             ∂Z/∂x2 = a2 - 2*a4*x2 = 0 → x2* = a2/(2*a4)
+// =====================================================
+
+function evalZ(x1, x2, a1, a2, a3, a4) {
+  const sign = objType === 'max' ? 1 : -1;
+  // For max: Z = a1*x1 + a2*x2 - a3*x1² - a4*x2²
+  // For min: Z = a1*x1 + a2*x2 + a3*x1² + a4*x2²  (user enters positive coefficients meaning cost)
+  if (objType === 'max') {
+    return a1*x1 + a2*x2 - a3*x1*x1 - a4*x2*x2;
+  } else {
+    return a1*x1 + a2*x2 + a3*x1*x1 + a4*x2*x2;
+  }
+}
+
+function gradZ(x1, x2, a1, a2, a3, a4) {
+  if (objType === 'max') {
+    return [a1 - 2*a3*x1, a2 - 2*a4*x2];
+  } else {
+    return [a1 + 2*a3*x1, a2 + 2*a4*x2];
+  }
+}
+
+function isFeasible(x1, x2, constraints, tol=1e-6) {
+  if (x1 < -tol || x2 < -tol) return false;
+  return constraints.every(({c1,c2,rhs,sign}) => {
+    const lhs = c1*x1 + c2*x2;
+    if (sign==='le') return lhs <= rhs+tol;
+    if (sign==='ge') return lhs >= rhs-tol;
+    return Math.abs(lhs-rhs) <= tol*10;
+  });
+}
+
+function projectPoint(x1, x2, constraints) {
+  let px = Math.max(0, x1);
+  let py = Math.max(0, x2);
+  for (let iter=0; iter<500; iter++) {
+    let moved = false;
+    constraints.forEach(({c1,c2,rhs,sign}) => {
+      const lhs = c1*px + c2*py;
+      let viol = 0;
+      if (sign==='le') viol = lhs - rhs;
+      else if (sign==='ge') viol = rhs - lhs;
+      else viol = 0;
+      if (viol > 1e-9) {
+        const norm2 = c1*c1 + c2*c2;
+        if (norm2 > 0) {
+          const sc = (sign==='ge' ? -1 : 1);
+          px -= sc*c1*viol/norm2;
+          py -= sc*c2*viol/norm2;
+          px = Math.max(0, px);
+          py = Math.max(0, py);
+          moved = true;
+        }
+      }
+    });
+    if (!moved) break;
+  }
+  return [px, py];
+}
+
+// Unconstrained optimum
+function unconstrainedOpt(a1, a2, a3, a4) {
+  if (objType === 'max') {
+    // ∂Z/∂x1 = a1 - 2a3·x1 = 0 → x1 = a1/(2a3)
+    const x1 = a3 > 0 ? a1/(2*a3) : null;
+    const x2 = a4 > 0 ? a2/(2*a4) : null;
+    return [x1, x2];
+  } else {
+    // ∂Z/∂x1 = a1 + 2a3·x1 = 0 → x1 = -a1/(2a3)
+    const x1 = a3 > 0 ? -a1/(2*a3) : null;
+    const x2 = a4 > 0 ? -a2/(2*a4) : null;
+    return [x1, x2];
+  }
+}
+
+// Gradient descent/ascent solver with projection
+function solveGradient(a1, a2, a3, a4, constraints) {
+  let x1=0.01, x2=0.01;
+  let alpha = 0.01;
+  const dir = objType === 'max' ? 1 : -1;
+  for (let i=0; i<8000; i++) {
+    const [g1,g2] = gradZ(x1,x2,a1,a2,a3,a4);
+    let nx = x1 + dir*alpha*g1;
+    let ny = x2 + dir*alpha*g2;
+    [nx, ny] = projectPoint(nx, ny, constraints);
+    if (Math.abs(nx-x1)<1e-10 && Math.abs(ny-x2)<1e-10) break;
+    x1=nx; x2=ny;
+  }
+  return [x1, x2];
+}
+
+// Evaluate ALL vertices + unconstrained + boundary intersections
+function candidatePoints(a1, a2, a3, a4, constraints) {
+  const pts = [[0,0]];
+
+  // Constraint intersections with axes
+  constraints.forEach(({c1,c2,rhs}) => {
+    if (Math.abs(c1) > 1e-9) pts.push([rhs/c1, 0]);
+    if (Math.abs(c2) > 1e-9) pts.push([0, rhs/c2]);
+  });
+
+  // Constraint-constraint intersections
+  for (let i=0; i<constraints.length; i++) {
+    for (let j=i+1; j<constraints.length; j++) {
+      const {c1:a,c2:b,rhs:r1} = constraints[i];
+      const {c1:c,c2:d,rhs:r2} = constraints[j];
+      const det = a*d - b*c;
+      if (Math.abs(det) > 1e-9) {
+        pts.push([(r1*d - b*r2)/det, (a*r2 - r1*c)/det]);
+      }
+    }
+  }
+
+  // Unconstrained optimum
+  const [ux, uy] = unconstrainedOpt(a1,a2,a3,a4);
+  if (ux!==null && uy!==null) pts.push([ux, uy]);
+
+  return pts.filter(([x,y]) => x>=-1e-6 && y>=-1e-6 && isFeasible(x,y,constraints));
+}
+
+// =====================================================
+// MAIN SOLVE
+// =====================================================
+function solveProblem() {
+  const a1 = parseFloat(document.getElementById('a1').value)||0;
+  const a2 = parseFloat(document.getElementById('a2').value)||0;
+  const a3 = parseFloat(document.getElementById('a3').value)||0;
+  const a4 = parseFloat(document.getElementById('a4').value)||0;
+  const constraints = getConstraints();
+
+  document.getElementById('btn-label').style.display='none';
+  document.getElementById('btn-spin').style.display='block';
+
+  setTimeout(() => {
+    document.getElementById('btn-label').style.display='block';
+    document.getElementById('btn-spin').style.display='none';
+    renderSolution(a1, a2, a3, a4, constraints);
+  }, 500);
+}
+
+function renderSolution(a1, a2, a3, a4, constraints) {
+  // 1. Candidates
+  const candidates = candidatePoints(a1,a2,a3,a4,constraints);
+
+  // 2. Gradient solver
+  const [gx1, gx2] = solveGradient(a1,a2,a3,a4,constraints);
+  if (isFeasible(gx1,gx2,constraints)) candidates.push([gx1,gx2]);
+
+  if (candidates.length === 0) {
+    showError('No se encontraron puntos factibles. Revisa que las restricciones no sean contradictorias y que los valores del RHS sean positivos.');
+    return;
+  }
+
+  // 3. Pick best
+  let best = candidates[0];
+  let bestZ = evalZ(best[0], best[1], a1, a2, a3, a4);
+  candidates.forEach(([x1,x2]) => {
+    const z = evalZ(x1,x2,a1,a2,a3,a4);
+    if (objType==='max' ? z > bestZ : z < bestZ) {
+      best=[x1,x2]; bestZ=z;
+    }
+  });
+
+  const x1s = best[0], x2s = best[1];
+
+  // 4. Unconstrained optimum
+  const [ux, uy] = unconstrainedOpt(a1,a2,a3,a4);
+  const unconFeasible = ux!==null && uy!==null && isFeasible(ux,uy,constraints);
+
+  // 5. KKT gradient at solution
+  const [g1, g2] = gradZ(x1s,x2s,a1,a2,a3,a4);
+  const dir = objType==='max'?1:-1;
+  const kktSatisfied = Math.abs(g1) < 0.01 && Math.abs(g2) < 0.01;
+
+  // 6. Active constraints
+  const active = constraints.filter(({c1,c2,rhs}) => Math.abs(c1*x1s+c2*x2s-rhs)<0.02);
+
+  // 7. Build HTML
+  const objWord = objType==='max' ? 'maximiza' : 'minimiza';
+  const objWordCap = objType==='max' ? 'Máxima' : 'Mínima';
+
+  // Format the objective function string
+  let fStr = '';
+  if (objType==='max') {
+    fStr = `Z = ${a1}x₁ + ${a2}x₂ − ${a3}x₁² − ${a4}x₂²`;
+  } else {
+    fStr = `Z = ${a1}x₁ + ${a2}x₂ + ${a3}x₁² + ${a4}x₂²`;
+  }
+
+  // Candidate table rows
+  const tableRows = candidates.slice(0,8).map(([x1,x2]) => {
+    const z = evalZ(x1,x2,a1,a2,a3,a4);
+    const isBest = Math.abs(x1-x1s)<0.001 && Math.abs(x2-x2s)<0.001;
+    return `<tr class="${isBest?'best-row':''}">
+      <td>${fmt(x1)}</td>
+      <td>${fmt(x2)}</td>
+      <td><strong>${fmt(z)}</strong></td>
+      ${isBest ? '<td>← ÓPTIMO ✓</td>' : '<td></td>'}
+    </tr>`;
+  }).join('');
+
+  // Step 2 — KKT derivadas
+  let step2text = '';
+  if (objType==='max') {
+    step2text = `∂Z/∂x₁ = ${a1} − 2(${a3})x₁ = 0  →  x₁ = ${a1}/(2·${a3}) = ${fmt(a3>0?a1/(2*a3):0)}
+∂Z/∂x₂ = ${a2} − 2(${a4})x₂ = 0  →  x₂ = ${a2}/(2·${a4}) = ${fmt(a4>0?a2/(2*a4):0)}`;
+  } else {
+    step2text = `∂Z/∂x₁ = ${a1} + 2(${a3})x₁ = 0  →  x₁ = ${fmt(a3>0?-a1/(2*a3):0)}
+∂Z/∂x₂ = ${a2} + 2(${a4})x₂ = 0  →  x₂ = ${fmt(a4>0?-a2/(2*a4):0)}`;
+  }
+
+  const uxStr = ux!==null ? fmt(ux) : 'indefinido';
+  const uyStr = uy!==null ? fmt(uy) : 'indefinido';
+  const unconNote = unconFeasible
+    ? `✓ El punto (${uxStr}, ${uyStr}) es factible → es el óptimo sin restricciones.`
+    : `✗ El punto (${uxStr}, ${uyStr}) NO cumple las restricciones → el óptimo estará en la frontera.`;
+
+  // Constraint display
+  const cStrs = constraints.map(({c1,c2,rhs,sign}) => {
+    const signStr = sign==='le'?'≤':sign==='ge'?'≥':'=';
+    return `${c1}x₁ + ${c2}x₂ ${signStr} ${rhs}`;
+  }).join('\n');
+
+  // KKT check
+  const kktStr = `∂Z/∂x₁ en (${fmt(x1s)}, ${fmt(x2s)}) ≈ ${fmt(g1)} ${Math.abs(g1)<0.05?'≈ 0 ✓':'≠ 0 (frontera activa)'}
+∂Z/∂x₂ en (${fmt(x1s)}, ${fmt(x2s)}) ≈ ${fmt(g2)} ${Math.abs(g2)<0.05?'≈ 0 ✓':'≠ 0 (frontera activa)'}`;
+
+  const activeStr = active.length > 0
+    ? active.map(({c1,c2,rhs}) => `${c1}x₁ + ${c2}x₂ = ${rhs} (activa)`).join('\n')
+    : 'Ninguna restricción está activa (el óptimo es interior)';
+
+  const solBody = document.getElementById('sol-body');
+  solBody.innerHTML = `
+    <!-- ANSWER BOX -->
+    <div class="answer-box">
+      <div class="answer-label">${objWordCap} utilidad — Punto óptimo</div>
+      <div class="answer-values">
+        <div class="answer-val">
+          <span class="val-name">x₁*</span>
+          <span class="val-num">${fmt(x1s)}</span>
+        </div>
+        <div class="answer-val">
+          <span class="val-name">x₂*</span>
+          <span class="val-num">${fmt(x2s)}</span>
+        </div>
+        <div class="answer-val highlight">
+          <span class="val-name">Z* (${objType==='max'?'máx':'mín'})</span>
+          <span class="val-num">${fmt(bestZ)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps-title">Procedimiento de solución</div>
+
+    <!-- STEP 1 -->
+    <div class="step-block">
+      <div class="step-num-title">Paso 1 — Identificar el modelo</div>
+      <div class="step-text">Función objetivo (${objType==='max'?'maximizar':'minimizar'}):</div>
+      <div class="step-formula">${fStr}</div>
+      <div class="step-text" style="margin-top:10px">Sujeto a:</div>
+      <div class="step-formula">${cStrs}
+x₁ ≥ 0,  x₂ ≥ 0</div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-block active-step">
+      <div class="step-num-title">Paso 2 — Condiciones de primer orden (KKT / derivadas parciales)</div>
+      <div class="step-text">Para encontrar el máximo sin restricciones, igualamos las derivadas parciales a cero:</div>
+      <div class="step-formula">${step2text}</div>
+      <div class="step-text" style="margin-top:10px">${unconNote}</div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-block">
+      <div class="step-num-title">Paso 3 — Evaluar puntos candidatos</div>
+      <div class="step-text">Se evalúa Z en todos los vértices de la región factible y en el punto óptimo sin restricciones:</div>
+      <table class="step-table" style="margin-top:12px">
+        <thead><tr><th>x₁</th><th>x₂</th><th>Z = f(x₁, x₂)</th><th></th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-block active-step">
+      <div class="step-num-title">Paso 4 — Verificar condiciones KKT en el óptimo</div>
+      <div class="step-formula">${kktStr}
+
+Restricciones en x* = (${fmt(x1s)}, ${fmt(x2s)}):
+${activeStr}</div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-block">
+      <div class="step-num-title">Paso 5 — Conclusión</div>
+      <div class="step-text">
+        La producción que <strong>${objWord}</strong> la utilidad es:<br>
+        <strong>x₁* = ${fmt(x1s)}</strong> unidades del artículo 1<br>
+        <strong>x₂* = ${fmt(x2s)}</strong> unidades del artículo 2<br>
+        Con una utilidad ${objType==='max'?'máxima':'mínima'} de <strong>Z* = ${fmt(bestZ)}</strong>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="steps-title">Gráfica — Región factible y punto óptimo</div>
+    <div class="plot-wrap">
+      <canvas id="qp-canvas" height="300"></canvas>
+    </div>
+  `;
+
+  document.getElementById('sol-card').classList.add('visible');
+  document.getElementById('sol-card').scrollIntoView({behavior:'smooth', block:'start'});
+
+  // Draw after render
+  requestAnimationFrame(() => drawPlot(a1, a2, a3, a4, constraints, x1s, x2s, candidates));
+}
+
+function showError(msg) {
+  const solBody = document.getElementById('sol-body');
+  solBody.innerHTML = `<div class="error-box">⚠ ${msg}</div>`;
+  document.getElementById('sol-card').classList.add('visible');
+  document.getElementById('sol-badge').textContent = 'ERROR';
+  document.getElementById('sol-card').scrollIntoView({behavior:'smooth'});
+}
+
+// =====================================================
+// FORMAT
+// =====================================================
+function fmt(v) {
+  if (v === null || isNaN(v)) return '—';
+  if (Math.abs(v - Math.round(v)) < 0.0001) return Math.round(v).toString();
+  return parseFloat(v.toFixed(4)).toString();
+}
+
+// =====================================================
+// PLOT
+// =====================================================
+function drawPlot(a1, a2, a3, a4, constraints, optX, optY, candidates) {
+  const canvas = document.getElementById('qp-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth || 600;
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Determine range
+  let xmax = 25, ymax = 25;
+  constraints.forEach(({c1,c2,rhs}) => {
+    if (c1>0) xmax = Math.max(xmax, rhs/c1*1.3);
+    if (c2>0) ymax = Math.max(ymax, rhs/c2*1.3);
+  });
+  xmax = Math.max(xmax, optX*1.4+4);
+  ymax = Math.max(ymax, optY*1.4+4);
+
+  const pad = {l:52, r:20, t:20, b:44};
+  const pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  const sx = pw/xmax, sy = ph/ymax;
+
+  function cx(x) { return pad.l + x*sx; }
+  function cy(y) { return pad.t + ph - y*sy; }
+
+  // Background
+  ctx.fillStyle='#faf8ff'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(180,160,230,0.2)'; ctx.lineWidth=0.5;
+  for(let v=0;v<=xmax;v+=5){ctx.beginPath();ctx.moveTo(cx(v),pad.t);ctx.lineTo(cx(v),pad.t+ph);ctx.stroke();}
+  for(let v=0;v<=ymax;v+=5){ctx.beginPath();ctx.moveTo(pad.l,cy(v));ctx.lineTo(pad.l+pw,cy(v));ctx.stroke();}
+
+  // Feasible region
+  function clipFeasible(xmx, ymx, cons) {
+    let poly=[[0,0],[xmx,0],[xmx,ymx],[0,ymx]];
+    cons.forEach(({c1,c2,rhs,sign})=>{
+      if(sign==='le') poly=clipPoly(poly,c1,c2,rhs);
+      else if(sign==='ge') poly=clipPoly(poly,-c1,-c2,-rhs);
+    });
+    return poly.filter(([x,y])=>x>=-1e-4&&y>=-1e-4);
+  }
+
+  function clipPoly(poly,a,b,c){
+    const out=[];
+    for(let i=0;i<poly.length;i++){
+      const [x1,y1]=poly[i],[x2,y2]=poly[(i+1)%poly.length];
+      const d1=a*x1+b*y1-c,d2=a*x2+b*y2-c;
+      if(d1<=1e-9)out.push([x1,y1]);
+      if((d1<-1e-9&&d2>1e-9)||(d1>1e-9&&d2<-1e-9)){
+        const t=d1/(d1-d2);
+        out.push([x1+t*(x2-x1),y1+t*(y2-y1)]);
+      }
+    }
+    return out;
+  }
+
+  const feasPoly = clipFeasible(xmax, ymax, constraints);
+
+  if (feasPoly.length >= 3) {
+    ctx.beginPath();
+    ctx.moveTo(cx(feasPoly[0][0]), cy(feasPoly[0][1]));
+    feasPoly.forEach(([x,y])=>ctx.lineTo(cx(x),cy(y)));
+    ctx.closePath();
+    ctx.fillStyle='rgba(124,92,191,0.08)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(124,92,191,0.4)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+  }
+
+  // Constraint lines
+  const colors = ['#7c5cbf','#b05cbf','#5c8cbf'];
+  constraints.forEach(({c1,c2,rhs},i)=>{
+    ctx.strokeStyle=colors[i%colors.length];
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    if(Math.abs(c2)>1e-9){
+      const y0=rhs/c2, yx=(rhs-c1*xmax)/c2;
+      ctx.moveTo(cx(0),cy(y0));
+      ctx.lineTo(cx(xmax),cy(yx));
+    } else if(Math.abs(c1)>1e-9){
+      const x0=rhs/c1;
+      ctx.moveTo(cx(x0),cy(0));
+      ctx.lineTo(cx(x0),cy(ymax));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Axes
+  ctx.strokeStyle='#4a3580'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t+ph); ctx.lineTo(pad.l+pw,pad.t+ph); ctx.stroke();
+
+  // Axis labels & ticks
+  ctx.fillStyle='#7a6fa0'; ctx.font='11px Lato,sans-serif'; ctx.textAlign='center';
+  for(let v=0;v<=xmax;v+=5){
+    ctx.fillText(v, cx(v), pad.t+ph+16);
+    ctx.strokeStyle='#b8a8e8'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx(v),pad.t+ph); ctx.lineTo(cx(v),pad.t+ph+4); ctx.stroke();
+  }
+  ctx.textAlign='right';
+  for(let v=0;v<=ymax;v+=5){
+    ctx.fillText(v, pad.l-8, cy(v)+4);
+    ctx.beginPath(); ctx.moveTo(pad.l-4,cy(v)); ctx.lineTo(pad.l,cy(v)); ctx.stroke();
+  }
+  ctx.fillStyle='#4a3580'; ctx.font='bold 12px Lato,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('x₁', pad.l+pw/2, H-8);
+  ctx.save(); ctx.translate(14, pad.t+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('x₂',0,0); ctx.restore();
+
+  // Candidate points
+  ctx.fillStyle='rgba(176,92,191,0.4)';
+  candidates.forEach(([x,y])=>{
+    if(x<0||y<0) return;
+    ctx.beginPath(); ctx.arc(cx(x),cy(y),4,0,Math.PI*2); ctx.fill();
+  });
+
+  // Contour lines of Z
+  const zOpt = evalZ(optX,optY,a1,a2,a3,a4);
+  const zLevels = [-0.6,-0.3,0,0.3,0.6].map(t=>zOpt*(1-t*0.4)).filter(z=>z!==0);
+  ctx.setLineDash([2,4]);
+  zLevels.forEach((zLevel,i)=>{
+    const n=60;
+    ctx.beginPath();
+    let started=false;
+    for(let xi=0;xi<=n;xi++){
+      const xv=xi/n*xmax;
+      // Z = a1*x1 + a2*x2 - a3*x1² - a4*x2² = zLevel
+      // a4*x2² - a2*x2 + (a3*x1² - a1*x1 + zLevel) = 0
+      const A=a4, B=-a2, C=a3*xv*xv-a1*xv+(objType==='max'?zLevel:-zLevel);
+      const disc=B*B-4*A*C;
+      if(disc<0||A===0) continue;
+      const yv=(-B-Math.sqrt(disc))/(2*A);
+      if(yv<0||yv>ymax) continue;
+      if(!started){ctx.moveTo(cx(xv),cy(yv));started=true;}
+      else ctx.lineTo(cx(xv),cy(yv));
+    }
+    ctx.strokeStyle=`rgba(124,92,191,${0.15+i*0.05})`;
+    ctx.lineWidth=1;
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // OPTIMAL POINT — big star
+  const ox=cx(optX), oy2=cy(optY);
+  ctx.beginPath(); ctx.arc(ox,oy2,10,0,Math.PI*2);
+  ctx.fillStyle='#7c5cbf'; ctx.fill();
+  ctx.beginPath(); ctx.arc(ox,oy2,7,0,Math.PI*2);
+  ctx.fillStyle='white'; ctx.fill();
+  ctx.beginPath(); ctx.arc(ox,oy2,4,0,Math.PI*2);
+  ctx.fillStyle='#7c5cbf'; ctx.fill();
+
+  // Label
+  ctx.fillStyle='#2d2440';
+  ctx.font='bold 11px Lato,sans-serif';
+  ctx.textAlign='left';
+  const labelX = optX > xmax*0.7 ? -90 : 14;
+  ctx.fillText(`x₁*=${fmt(optX)}, x₂*=${fmt(optY)}`, ox+labelX, oy2-10);
+  ctx.fillStyle='#7c5cbf';
+  ctx.fillText(`Z*=${fmt(zOpt)}`, ox+labelX, oy2+4);
+}
+
+// =====================================================
+// INIT
+// =====================================================
+window.addEventListener('load', () => {
+  loadExample(0);
+});
+</script>
+
+</body>
+</html>

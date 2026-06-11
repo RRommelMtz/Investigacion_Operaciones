@@ -1,0 +1,606 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.app{padding:1.5rem 0;max-width:920px;margin:0 auto}
+h1{font-size:22px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem}
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.tab{font-size:13px;padding:8px 16px;cursor:pointer;border:none;background:none;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:var(--font-sans)}
+.tab.active{color:var(--color-text-primary);border-bottom:2px solid #7F77DD;font-weight:500}
+.tab:hover:not(.active){color:var(--color-text-primary)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem}
+input[type=number]{font-family:var(--font-sans);font-size:13px}
+.btn{font-family:var(--font-sans);font-size:13px;padding:8px 16px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary)}
+.btn:hover{background:var(--color-background-secondary)}
+.btn:active{transform:scale(0.98)}
+.btn.primary{background:#7F77DD;color:#fff;border-color:#7F77DD}
+.btn.primary:hover{background:#534AB7}
+.btn.primary:disabled{background:#B4B2A9;border-color:#B4B2A9;cursor:not-allowed;transform:none;color:#fff}
+.btn.success{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.btn.success:hover{background:#0F6E56}
+.btn.sm{padding:5px 10px;font-size:12px}
+.tbl-wrap{overflow-x:auto;margin-top:1rem}
+table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{border:0.5px solid var(--color-border-tertiary);padding:8px 10px;text-align:center}
+th{background:var(--color-background-secondary);font-weight:500;color:var(--color-text-secondary)}
+.alloc-input{width:52px;text-align:center;font-size:12px;font-family:var(--font-sans)}
+.alloc-input.invalid{border-color:#E24B4A;background:#FCEBEB;color:#791F1F}
+.alloc-input.invalid:focus{outline-color:#E24B4A}
+.section-title{font-size:14px;font-weight:500;margin:1rem 0 8px;color:var(--color-text-primary)}
+.dim-row{display:flex;gap:16px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.dim-row label{font-size:13px;color:var(--color-text-secondary)}
+.dim-row input{width:52px}
+.method-btn{font-size:12px;padding:6px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);font-family:var(--font-sans)}
+.method-btn.active{background:#EEEDFE;color:#3C3489;border-color:#AFA9EC;font-weight:500}
+.iter-step{border-left:3px solid #7F77DD;padding-left:12px;margin:8px 0;font-size:13px;border-radius:0}
+.iter-step .step-title{font-weight:500;margin-bottom:3px}
+.iter-step .step-body{color:var(--color-text-secondary)}
+.neg-cell{background:#FCEBEB;color:#A32D2D;font-weight:500}
+.balance-panel{border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-top:1rem;border:0.5px solid}
+.balance-ok{background:#E1F5EE;border-color:#5DCAA5}
+.balance-warn{background:#FAEEDA;border-color:#EF9F27}
+.balance-err{background:#FCEBEB;border-color:#F09595}
+.balance-panel .bal-title{font-size:14px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.balance-panel .bal-body{font-size:13px;line-height:1.6}
+.balance-panel .bal-numbers{display:flex;gap:16px;margin:10px 0;flex-wrap:wrap}
+.balance-panel .bal-num{background:rgba(255,255,255,0.6);border-radius:var(--border-radius-md);padding:8px 14px;text-align:center}
+.balance-panel .bal-num .n{font-size:20px;font-weight:500}
+.balance-panel .bal-num .l{font-size:11px;margin-top:2px}
+.balance-ok .bal-title{color:#085041}.balance-ok .bal-body{color:#0F6E56}.balance-ok .bal-num .n{color:#085041}.balance-ok .bal-num .l{color:#1D9E75}
+.balance-warn .bal-title{color:#633806}.balance-warn .bal-body{color:#854F0B}.balance-warn .bal-num .n{color:#633806}.balance-warn .bal-num .l{color:#BA7517}
+.balance-err .bal-title{color:#791F1F}.balance-err .bal-body{color:#A32D2D}.balance-err .bal-num .n{color:#791F1F}.balance-err .bal-num .l{color:#E24B4A}
+.validation-banner{border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-top:1rem;border:0.5px solid;background:#FCEBEB;border-color:#F09595}
+.validation-banner .vb-title{font-size:14px;font-weight:500;color:#791F1F;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.validation-banner .vb-list{list-style:none;padding:0;margin:0}
+.validation-banner .vb-list li{font-size:12px;color:#A32D2D;padding:3px 0;display:flex;align-items:center;gap:6px}
+.badge{display:inline-block;font-size:11px;padding:3px 8px;border-radius:var(--border-radius-md);margin-left:6px;vertical-align:middle}
+.badge-opt{background:#E1F5EE;color:#085041}
+.badge-feas{background:#EEEDFE;color:#3C3489}
+.badge-warn{background:#FAEEDA;color:#633806}
+.badge-err{background:#FCEBEB;color:#791F1F}
+.result-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;margin-top:1rem}
+.cost-big{font-size:28px;font-weight:500;color:#7F77DD}
+.cost-label{font-size:13px;color:var(--color-text-secondary)}
+.info{font-size:12px;color:#0C447C;background:#E6F1FB;padding:8px 12px;border-radius:var(--border-radius-md);margin:8px 0}
+.ok{font-size:12px;color:#085041;background:#E1F5EE;padding:8px 12px;border-radius:var(--border-radius-md);margin:8px 0}
+.ficticio-note{font-size:12px;color:#BA7517;background:#FAEEDA;padding:8px 12px;border-left:3px solid #EF9F27;border-radius:0;margin:8px 0}
+.examples-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:8px;margin-top:10px}
+.ex-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;cursor:pointer;background:var(--color-background-primary);text-align:left;font-family:var(--font-sans)}
+.ex-card:hover{background:var(--color-background-secondary);border-color:var(--color-border-secondary)}
+.ex-card .ex-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.ex-card .ex-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.4}
+.ex-card .ex-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:var(--border-radius-md);margin-top:5px}
+.ex-balanced{background:#E1F5EE;color:#085041}
+.ex-unbalanced{background:#FAEEDA;color:#633806}
+</style>
+
+<div class="app">
+<h2 class="sr-only">Solucionador del Método de Transporte — Investigación de Operaciones</h2>
+<h1>Método de Transporte <span class="badge badge-feas" id="status-badge">Listo</span></h1>
+<p class="sub">Investigación de Operaciones — Solución inicial + Optimización MODI (UV)</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('setup',this)"><i class="ti ti-table" aria-hidden="true"></i> Configuración</button>
+  <button class="tab" id="tab-initial" onclick="switchTab('initial',this)"><i class="ti ti-route" aria-hidden="true"></i> Solución inicial</button>
+  <button class="tab" id="tab-optimize" onclick="switchTab('optimize',this)"><i class="ti ti-sparkles" aria-hidden="true"></i> Optimización MODI</button>
+  <button class="tab" id="tab-summary" onclick="switchTab('summary',this)"><i class="ti ti-report-analytics" aria-hidden="true"></i> Resumen</button>
+</div>
+
+<div id="panel-setup" class="panel active">
+  <div class="card">
+    <p class="section-title">Ejemplos de carga rápida</p>
+    <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">Selecciona un ejemplo para cargar los datos automáticamente. Incluye casos balanceados y no balanceados.</p>
+    <div class="examples-grid" id="examples-grid"></div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <p class="section-title">Dimensiones del problema</p>
+    <div class="dim-row">
+      <label>Fuentes (orígenes): <input type="number" id="num-src" value="3" min="2" max="6" oninput="buildMatrix()"></label>
+      <label>Destinos: <input type="number" id="num-dst" value="4" min="2" max="6" oninput="buildMatrix()"></label>
+      <button class="btn sm" onclick="clearAll()"><i class="ti ti-trash" aria-hidden="true"></i> Limpiar</button>
+    </div>
+    <p class="section-title">Costos de transporte, oferta y demanda</p>
+    <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Todos los valores deben ser <strong>≥ 0</strong>. Los costos negativos no tienen sentido en el método de transporte.</p>
+    <div id="matrix-container"></div>
+    <div id="validation-container"></div>
+    <div id="balance-panel-container"></div>
+  </div>
+
+  <div style="margin-top:1rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button class="btn primary" id="btn-continue" onclick="goToInitial()" disabled><i class="ti ti-arrow-right" aria-hidden="true"></i> Continuar con solución inicial</button>
+    <span id="continue-hint" style="font-size:12px;color:var(--color-text-secondary)">Ingresa los datos para continuar.</span>
+  </div>
+</div>
+
+<div id="panel-initial" class="panel">
+  <div class="card">
+    <p class="section-title">Método de solución básica factible inicial</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem">
+      <button class="method-btn active" id="m-nw" onclick="selectMethod('nw',this)">Esquina noroeste</button>
+      <button class="method-btn" id="m-mc" onclick="selectMethod('mc',this)">Costo mínimo</button>
+      <button class="method-btn" id="m-vam" onclick="selectMethod('vam',this)">Aproximación de Vogel (VAM)</button>
+    </div>
+    <button class="btn primary" onclick="solveInitial()"><i class="ti ti-calculator" aria-hidden="true"></i> Calcular solución inicial</button>
+  </div>
+  <div id="initial-result"></div>
+  <div id="btn-to-opt" style="margin-top:1rem"></div>
+</div>
+
+<div id="panel-optimize" class="panel">
+  <div id="optimize-content"><div class="info">Primero calcula una solución inicial para poder optimizar.</div></div>
+</div>
+
+<div id="panel-summary" class="panel">
+  <div id="summary-content"><div class="info">Completa la optimización para ver el resumen final.</div></div>
+</div>
+</div>
+
+<script>
+const EXAMPLES=[
+  {name:'Clásico balanceado',desc:'3 orígenes × 4 destinos, oferta = demanda = 280',tag:'balanced',src:3,dst:4,costs:[[2,3,1,5],[7,3,4,6],[4,1,2,3]],supply:[120,80,80],demand:[150,70,100,30]},
+  {name:'Manufactura balanceada',desc:'2 plantas, 3 almacenes — caso simple',tag:'balanced',src:2,dst:3,costs:[[4,8,1],[7,2,3]],supply:[120,80],demand:[150,30,20]},
+  {name:'Distribución 4×4 balanceada',desc:'4 almacenes, 4 clientes — problema cuadrado',tag:'balanced',src:4,dst:4,costs:[[2,3,11,7],[1,0,6,1],[5,8,15,9],[14,16,16,0]],supply:[300,400,500,600],demand:[250,350,400,800]},
+  {name:'Exceso de oferta',desc:'Oferta (350) > Demanda (300) — desbalanceado',tag:'unbalanced',src:3,dst:3,costs:[[5,4,3],[3,6,2],[4,1,5]],supply:[140,120,90],demand:[100,120,80]},
+  {name:'Exceso de demanda',desc:'Demanda (420) > Oferta (380) — desbalanceado',tag:'unbalanced',src:2,dst:4,costs:[[3,5,7,6],[1,8,2,9]],supply:[200,180],demand:[120,100,130,70]},
+  {name:'Gran escala balanceada',desc:'5 orígenes × 5 destinos, volúmenes altos',tag:'balanced',src:5,dst:5,costs:[[10,8,6,5,4],[7,11,11,3,7],[6,1,3,8,5],[3,9,2,6,10],[8,4,7,2,9]],supply:[250,350,400,200,300],demand:[300,250,350,200,400]}
+];
+
+let S=3,D=4,costs=[],supply=[],demand=[],allocs=[],currentMethod='nw',iterations=[];
+let optAllocs=[],initCost=0,optCost=0;
+
+function switchTab(t,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+function renderExamples(){
+  document.getElementById('examples-grid').innerHTML=EXAMPLES.map((e,i)=>`
+    <button class="ex-card" onclick="loadExample(${i})">
+      <div class="ex-title">${e.name}</div>
+      <div class="ex-desc">${e.desc}</div>
+      <span class="ex-tag ${e.tag==='balanced'?'ex-balanced':'ex-unbalanced'}">${e.tag==='balanced'?'Balanceado':'No balanceado'}</span>
+    </button>`).join('');
+}
+
+function loadExample(idx){
+  const e=EXAMPLES[idx];
+  S=e.src;D=e.dst;
+  document.getElementById('num-src').value=S;
+  document.getElementById('num-dst').value=D;
+  costs=e.costs.map(r=>[...r]);
+  supply=[...e.supply];
+  demand=[...e.demand];
+  renderMatrix();
+  setTimeout(()=>{
+    for(let i=0;i<S;i++){
+      for(let j=0;j<D;j++){const el=document.getElementById(`c${i}_${j}`);if(el)el.value=costs[i][j];}
+      const el=document.getElementById(`s${i}`);if(el)el.value=supply[i];
+    }
+    for(let j=0;j<D;j++){const el=document.getElementById(`d${j}`);if(el)el.value=demand[j];}
+    runValidation();
+  },10);
+}
+
+function buildMatrix(){
+  S=Math.max(2,Math.min(6,parseInt(document.getElementById('num-src').value)||3));
+  D=Math.max(2,Math.min(6,parseInt(document.getElementById('num-dst').value)||4));
+  costs=Array.from({length:S},()=>Array(D).fill(0));
+  supply=Array(S).fill(0);demand=Array(D).fill(0);
+  renderMatrix();
+}
+
+function renderMatrix(){
+  const c=document.getElementById('matrix-container');
+  let h=`<div class="tbl-wrap"><table><thead><tr><th style="min-width:80px">Origen \\ Destino</th>`;
+  for(let j=0;j<D;j++) h+=`<th>D<sub>${j+1}</sub></th>`;
+  h+=`<th style="background:#EEEDFE;color:#3C3489">Oferta</th></tr></thead><tbody>`;
+  for(let i=0;i<S;i++){
+    h+=`<tr><th>O<sub>${i+1}</sub></th>`;
+    for(let j=0;j<D;j++){
+      const v=costs[i]&&costs[i][j]!==undefined?costs[i][j]:'';
+      h+=`<td><input type="number" class="alloc-input" id="c${i}_${j}" value="${v}" placeholder="0" min="0" oninput="onCostInput(${i},${j},this)"></td>`;
+    }
+    const sv=supply[i]||'';
+    h+=`<td style="background:#EEEDFE"><input type="number" class="alloc-input" id="s${i}" value="${sv}" placeholder="0" min="0" style="background:transparent;border:none;color:#3C3489;font-weight:500" oninput="onSupplyInput(${i},this)"></td></tr>`;
+  }
+  h+=`<tr><td style="background:#E1F5EE;color:#085041;font-weight:500">Demanda</td>`;
+  for(let j=0;j<D;j++){
+    const dv=demand[j]||'';
+    h+=`<td style="background:#E1F5EE"><input type="number" class="alloc-input" id="d${j}" value="${dv}" placeholder="0" min="0" style="background:transparent;border:none;color:#085041;font-weight:500" oninput="onDemandInput(${j},this)"></td>`;
+  }
+  h+=`<td id="totals-cell" style="background:#E1F5EE;color:#085041;font-weight:500;font-size:12px">—</td></tr></tbody></table></div>`;
+  c.innerHTML=h;
+  runValidation();
+}
+
+function onCostInput(i,j,el){
+  const v=parseFloat(el.value);
+  if(el.value!==''&&v<0){
+    el.classList.add('invalid');
+  } else {
+    el.classList.remove('invalid');
+    if(!costs[i])costs[i]=[];
+    costs[i][j]=isNaN(v)?0:v;
+  }
+  runValidation();
+}
+
+function onSupplyInput(i,el){
+  const v=parseFloat(el.value);
+  if(el.value!==''&&v<0){el.classList.add('invalid');}
+  else{el.classList.remove('invalid');supply[i]=isNaN(v)?0:v;}
+  runValidation();
+}
+
+function onDemandInput(j,el){
+  const v=parseFloat(el.value);
+  if(el.value!==''&&v<0){el.classList.add('invalid');}
+  else{el.classList.remove('invalid');demand[j]=isNaN(v)?0:v;}
+  runValidation();
+}
+
+function collectCurrentValues(){
+  const negCosts=[],negSupply=[],negDemand=[];
+  for(let i=0;i<S;i++){
+    for(let j=0;j<D;j++){
+      const el=document.getElementById(`c${i}_${j}`);
+      if(el){
+        const v=parseFloat(el.value);
+        if(el.value!==''&&v<0) negCosts.push({i,j,v});
+        else{if(!costs[i])costs[i]=[];costs[i][j]=isNaN(v)?0:v;}
+      }
+    }
+    const el=document.getElementById(`s${i}`);
+    if(el){const v=parseFloat(el.value);if(el.value!==''&&v<0)negSupply.push({i,v});else supply[i]=isNaN(v)?0:v;}
+  }
+  for(let j=0;j<D;j++){
+    const el=document.getElementById(`d${j}`);
+    if(el){const v=parseFloat(el.value);if(el.value!==''&&v<0)negDemand.push({j,v});else demand[j]=isNaN(v)?0:v;}
+  }
+  return{negCosts,negSupply,negDemand};
+}
+
+function runValidation(){
+  const{negCosts,negSupply,negDemand}=collectCurrentValues();
+  const hasNeg=negCosts.length>0||negSupply.length>0||negDemand.length>0;
+
+  const vc=document.getElementById('validation-container');
+  if(hasNeg){
+    let items='';
+    negCosts.forEach(({i,j,v})=>{items+=`<li><i class="ti ti-x" style="font-size:13px;color:#E24B4A" aria-hidden="true"></i> Costo O${i+1}→D${j+1}: valor <strong>${v}</strong> — los costos deben ser ≥ 0</li>`;});
+    negSupply.forEach(({i,v})=>{items+=`<li><i class="ti ti-x" style="font-size:13px;color:#E24B4A" aria-hidden="true"></i> Oferta O${i+1}: valor <strong>${v}</strong> — la oferta debe ser ≥ 0</li>`;});
+    negDemand.forEach(({j,v})=>{items+=`<li><i class="ti ti-x" style="font-size:13px;color:#E24B4A" aria-hidden="true"></i> Demanda D${j+1}: valor <strong>${v}</strong> — la demanda debe ser ≥ 0</li>`;});
+    vc.innerHTML=`
+      <div class="validation-banner">
+        <div class="vb-title"><i class="ti ti-alert-circle" style="font-size:18px" aria-hidden="true"></i> Valores inválidos detectados</div>
+        <ul class="vb-list">${items}</ul>
+        <p style="font-size:11px;color:#A32D2D;margin-top:8px">Los costos, la oferta y la demanda no pueden ser negativos en el método de transporte. Corrige los campos marcados en rojo para continuar.</p>
+      </div>`;
+  } else {
+    vc.innerHTML='';
+  }
+
+  checkBalance(hasNeg);
+}
+
+function checkBalance(hasNeg){
+  const ts=supply.reduce((a,b)=>a+b,0),td=demand.reduce((a,b)=>a+b,0);
+  const tc=document.getElementById('totals-cell');
+  if(tc)tc.textContent=`${ts} / ${td}`;
+  const container=document.getElementById('balance-panel-container');
+  const btn=document.getElementById('btn-continue');
+  const hint=document.getElementById('continue-hint');
+
+  if(hasNeg){
+    container.innerHTML='';
+    btn.disabled=true;
+    hint.textContent='Corrige los valores negativos para continuar.';
+    document.getElementById('status-badge').textContent='Errores';
+    document.getElementById('status-badge').className='badge badge-err';
+    return;
+  }
+
+  if(ts===0&&td===0){
+    container.innerHTML='';
+    btn.disabled=true;
+    hint.textContent='Ingresa los datos para continuar.';
+    document.getElementById('status-badge').textContent='Listo';
+    document.getElementById('status-badge').className='badge badge-feas';
+    return;
+  }
+
+  if(ts===td){
+    container.innerHTML=`
+      <div class="balance-panel balance-ok">
+        <div class="bal-title"><i class="ti ti-circle-check" style="font-size:18px" aria-hidden="true"></i> Sistema balanceado</div>
+        <div class="bal-numbers">
+          <div class="bal-num"><div class="n">${ts}</div><div class="l">Oferta total</div></div>
+          <div class="bal-num"><div class="n">${td}</div><div class="l">Demanda total</div></div>
+          <div class="bal-num"><div class="n">0</div><div class="l">Diferencia</div></div>
+        </div>
+        <div class="bal-body">La oferta total es igual a la demanda total. El problema puede resolverse directamente.</div>
+      </div>`;
+    btn.disabled=false;hint.textContent='';
+    document.getElementById('status-badge').textContent='Balanceado';
+    document.getElementById('status-badge').className='badge badge-opt';
+  } else {
+    const diff=Math.abs(ts-td),exceso=ts>td?'oferta':'demanda';
+    const ficticio=ts>td?`columna ficticia D* con demanda = ${diff}`:`fila ficticia O* con oferta = ${diff}`;
+    container.innerHTML=`
+      <div class="balance-panel balance-warn">
+        <div class="bal-title"><i class="ti ti-alert-triangle" style="font-size:18px" aria-hidden="true"></i> Sistema no balanceado — se requiere variable ficticia</div>
+        <div class="bal-numbers">
+          <div class="bal-num"><div class="n">${ts}</div><div class="l">Oferta total</div></div>
+          <div class="bal-num"><div class="n">${td}</div><div class="l">Demanda total</div></div>
+          <div class="bal-num"><div class="n">${diff}</div><div class="l">Diferencia</div></div>
+        </div>
+        <div class="bal-body">Hay exceso de <strong>${exceso}</strong> por <strong>${diff} unidades</strong>. Se agregará automáticamente una ${ficticio} con costos en 0 para balancear el sistema antes de resolver.</div>
+      </div>`;
+    btn.disabled=false;hint.textContent='Se balanceará automáticamente al resolver.';
+    document.getElementById('status-badge').textContent='No balanceado';
+    document.getElementById('status-badge').className='badge badge-warn';
+  }
+}
+
+function clearAll(){
+  costs=Array.from({length:S},()=>Array(D).fill(0));
+  supply=Array(S).fill(0);demand=Array(D).fill(0);
+  renderMatrix();
+}
+
+function selectMethod(m,btn){
+  currentMethod=m;
+  document.querySelectorAll('.method-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+}
+
+function goToInitial(){
+  switchTab('initial',document.getElementById('tab-initial'));
+}
+
+function getBalanced(){
+  let c=costs.map(r=>[...r]),s=[...supply],d=[...demand];
+  const ts=s.reduce((a,b)=>a+b,0),td=d.reduce((a,b)=>a+b,0);
+  let extraRow=false,extraCol=false;
+  if(ts>td){d.push(ts-td);for(let i=0;i<s.length;i++)c[i].push(0);extraCol=true;}
+  else if(td>ts){s.push(td-ts);c.push(Array(d.length).fill(0));extraRow=true;}
+  return{c,s,d,extraRow,extraCol,rows:s.length,cols:d.length};
+}
+
+function solveInitial(){
+  const{c,s,d,extraRow,extraCol,rows,cols}=getBalanced();
+  let a=Array.from({length:rows},()=>Array(cols).fill(0));
+  iterations=[];
+  if(currentMethod==='nw') solveNW(c,s.slice(),d.slice(),a,rows,cols);
+  else if(currentMethod==='mc') solveMC(c,s.slice(),d.slice(),a,rows,cols);
+  else solveVAM(c,s.slice(),d.slice(),a,rows,cols);
+  allocs=a;initCost=calcCost(c,a,rows,cols);
+  optAllocs=a.map(r=>[...r]);
+  renderInitialResult(c,a,rows,cols,extraRow,extraCol,s,d);
+  document.getElementById('btn-to-opt').innerHTML=`<button class="btn success" onclick="goToOptimize()"><i class="ti ti-sparkles" aria-hidden="true"></i> Optimizar con método MODI (UV)</button>`;
+}
+
+function solveNW(c,s,d,a,rows,cols){
+  iterations.push({type:'method',text:'Esquina noroeste: se asigna siempre a la celda superior izquierda disponible, sin considerar costos.'});
+  let i=0,j=0;
+  while(i<rows&&j<cols){
+    const v=Math.min(s[i],d[j]);a[i][j]=v;s[i]-=v;d[j]-=v;
+    iterations.push({type:'step',title:`Asignar O${i+1} → D${j+1}`,body:`min(${s[i]+v}, ${d[j]+v}) = ${v} unidades. Oferta restante O${i+1}: ${s[i]}, demanda restante D${j+1}: ${d[j]}`});
+    if(s[i]===0&&d[j]===0){if(i<rows-1)a[i+1][j]=0;i++;j++;}
+    else if(s[i]===0)i++;else j++;
+  }
+}
+
+function solveMC(c,s,d,a,rows,cols){
+  iterations.push({type:'method',text:'Costo mínimo: en cada paso se asigna el máximo posible a la celda de menor costo disponible.'});
+  let sr=[...s],dr=[...d],used=Array.from({length:rows},()=>Array(cols).fill(false));
+  let iters=0;
+  while(iters<rows*cols*3){
+    let minC=Infinity,mi=-1,mj=-1;
+    for(let i=0;i<rows;i++){if(sr[i]<=0)continue;for(let j=0;j<cols;j++){if(dr[j]<=0||used[i][j])continue;if(c[i][j]<minC){minC=c[i][j];mi=i;mj=j;}}}
+    if(mi<0)break;
+    const v=Math.min(sr[mi],dr[mj]);a[mi][mj]=v;sr[mi]-=v;dr[mj]-=v;
+    iterations.push({type:'step',title:`Asignar O${mi+1} → D${mj+1} (costo unitario = ${minC})`,body:`min(${sr[mi]+v}, ${dr[mj]+v}) = ${v} unidades. Oferta restante: ${sr[mi]}, demanda restante: ${dr[mj]}`});
+    used[mi][mj]=true;
+    if(sr[mi]===0)for(let j=0;j<cols;j++)used[mi][j]=true;
+    if(dr[mj]===0)for(let i=0;i<rows;i++)used[i][mj]=true;
+    iters++;
+  }
+}
+
+function solveVAM(c,s,d,a,rows,cols){
+  iterations.push({type:'method',text:'Aproximación de Vogel (VAM): se calcula la penalización de cada fila/columna y se asigna a la de mayor penalización.'});
+  let sr=[...s],dr=[...d],rowDone=Array(rows).fill(false),colDone=Array(cols).fill(false);
+  let iters=0;
+  while(iters<(rows+cols)*3){
+    let penalty=[];
+    for(let i=0;i<rows;i++){
+      if(rowDone[i]){penalty.push({type:'r',idx:i,pen:-1});continue;}
+      let vals=[];for(let j=0;j<cols;j++){if(!colDone[j])vals.push({v:c[i][j],j});}
+      vals.sort((a,b)=>a.v-b.v);
+      if(vals.length<1){penalty.push({type:'r',idx:i,pen:-1});continue;}
+      penalty.push({type:'r',idx:i,pen:vals.length>1?vals[1].v-vals[0].v:vals[0].v,minJ:vals[0].j,minV:vals[0].v});
+    }
+    for(let j=0;j<cols;j++){
+      if(colDone[j]){penalty.push({type:'c',idx:j,pen:-1});continue;}
+      let vals=[];for(let i=0;i<rows;i++){if(!rowDone[i])vals.push({v:c[i][j],i});}
+      vals.sort((a,b)=>a.v-b.v);
+      if(vals.length<1){penalty.push({type:'c',idx:j,pen:-1});continue;}
+      penalty.push({type:'c',idx:j,pen:vals.length>1?vals[1].v-vals[0].v:vals[0].v,minI:vals[0].i,minV:vals[0].v});
+    }
+    penalty.sort((a,b)=>b.pen-a.pen);
+    const best=penalty[0];if(!best||best.pen<0)break;
+    let mi,mj;
+    if(best.type==='r'){mi=best.idx;mj=best.minJ;}else{mi=best.minI;mj=best.idx;}
+    const v=Math.min(sr[mi],dr[mj]);a[mi][mj]=v;sr[mi]-=v;dr[mj]-=v;
+    iterations.push({type:'step',title:`Asignar O${mi+1} → D${mj+1} (penalización = ${best.pen}, costo = ${c[mi][mj]})`,body:`min(${sr[mi]+v}, ${dr[mj]+v}) = ${v} unidades. Oferta restante: ${sr[mi]}, demanda restante: ${dr[mj]}`});
+    if(sr[mi]===0)rowDone[mi]=true;
+    if(dr[mj]===0)colDone[mj]=true;
+    iters++;
+  }
+}
+
+function calcCost(c,a,rows,cols){let t=0;for(let i=0;i<rows;i++)for(let j=0;j<cols;j++)t+=c[i][j]*a[i][j];return t;}
+
+function renderInitialResult(c,a,rows,cols,extraRow,extraCol,s,d){
+  const cost=calcCost(c,a,rows,cols);
+  let h=`<div class="card" style="margin-top:1rem"><p class="section-title">Tabla de asignación inicial — <span style="color:#534AB7">${currentMethod==='nw'?'Esquina noroeste':currentMethod==='mc'?'Costo mínimo':'Vogel (VAM)'}</span></p>`;
+  if(extraRow||extraCol) h+=`<div class="ficticio-note"><i class="ti ti-info-circle" aria-hidden="true"></i> <strong>Variable ficticia agregada:</strong> Se agregó ${extraRow?`fila O${rows} ficticia con oferta = ${s[rows-1]}`:`columna D${cols} ficticia con demanda = ${d[cols-1]}`} y costos en 0 para balancear el sistema.</div>`;
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Origen \\ Destino</th>`;
+  for(let j=0;j<cols;j++){const f=extraCol&&j===cols-1;h+=`<th${f?' style="background:#FAEEDA;color:#633806"':''}>${f?'D* ficticio':`D${j+1}`}</th>`;}
+  h+=`<th style="background:#EEEDFE;color:#3C3489">Oferta</th></tr></thead><tbody>`;
+  for(let i=0;i<rows;i++){
+    const f=extraRow&&i===rows-1;
+    h+=`<tr><th${f?' style="background:#FAEEDA;color:#633806"':''}>${f?'O* ficticio':`O${i+1}`}</th>`;
+    for(let j=0;j<cols;j++){
+      const al=a[i][j]>0;
+      h+=`<td${al?' style="background:#EEEDFE"':''}><div style="font-size:10px;color:var(--color-text-secondary)">${c[i][j]}</div>${al?`<div style="font-weight:500;color:#534AB7;font-size:14px">${a[i][j]}</div>`:`<div style="color:var(--color-text-secondary);font-size:12px">—</div>`}</td>`;
+    }
+    h+=`<td style="background:#EEEDFE;color:#3C3489;font-weight:500">${s[i]}</td></tr>`;
+  }
+  h+=`<tr><td style="background:#E1F5EE;color:#085041;font-weight:500">Demanda</td>`;
+  for(let j=0;j<cols;j++){const f=extraCol&&j===cols-1;h+=`<td style="background:#E1F5EE;color:${f?'#633806':'#085041'};font-weight:500">${d[j]}</td>`;}
+  h+=`<td style="background:#E1F5EE;color:#085041;font-weight:500">${s.reduce((a,b)=>a+b,0)}</td></tr></tbody></table></div>`;
+  h+=`<div class="result-box" style="margin-top:1rem;display:flex;align-items:center;gap:24px;flex-wrap:wrap"><div><div class="cost-label">Costo total inicial</div><div class="cost-big">$${cost.toLocaleString()}</div></div><div><div class="cost-label">Variables básicas</div><div style="font-size:18px;font-weight:500">${a.flat().filter(v=>v>0).length} <span style="font-size:13px;color:var(--color-text-secondary)">de ${rows+cols-1} requeridas</span></div></div></div></div>`;
+  if(iterations.length){
+    h+=`<div class="card" style="margin-top:1rem"><p class="section-title">Procedimiento paso a paso</p>`;
+    iterations.forEach(it=>{
+      if(it.type==='method') h+=`<div class="info">${it.text}</div>`;
+      else h+=`<div class="iter-step"><div class="step-title">${it.title}</div><div class="step-body">${it.body}</div></div>`;
+    });
+    h+=`</div>`;
+  }
+  document.getElementById('initial-result').innerHTML=h;
+}
+
+function goToOptimize(){
+  switchTab('optimize',document.getElementById('tab-optimize'));
+  runMODI();
+}
+
+function runMODI(){
+  const{c,s,d,rows,cols}=getBalanced();
+  let a=allocs.map(r=>[...r]);
+  let iterCount=0,log=[],maxIter=50;
+  while(iterCount<maxIter){
+    const{u,v}=computeUV(c,a,rows,cols);
+    const deltas=computeDeltas(c,u,v,a,rows,cols);
+    let entering=null,minVal=Infinity;
+    for(let i=0;i<rows;i++)for(let j=0;j<cols;j++)if(a[i][j]===0&&deltas[i][j]<minVal){minVal=deltas[i][j];entering={i,j};}
+    if(!entering||minVal>=0){log.push({type:'optimal',u,v,deltas,a:a.map(r=>[...r]),cost:calcCost(c,a,rows,cols)});break;}
+    const loop=findLoop(a,rows,cols,entering.i,entering.j);
+    if(!loop||loop.length<4){log.push({type:'optimal',u,v,deltas,a:a.map(r=>[...r]),cost:calcCost(c,a,rows,cols)});break;}
+    const leaving=doLoop(a,loop);
+    log.push({type:'iter',u,v,deltas,entering,leaving,loop,a:a.map(r=>[...r]),cost:calcCost(c,a,rows,cols),iter:iterCount+1});
+    iterCount++;
+  }
+  optAllocs=a;optCost=calcCost(c,a,rows,cols);
+  renderOptimize(c,a,log,rows,cols);
+  renderSummary(c,rows,cols);
+}
+
+function computeUV(c,a,rows,cols){
+  let u=Array(rows).fill(null),v=Array(cols).fill(null);u[0]=0;
+  let changed=true,g=0;
+  while(changed&&g<1000){changed=false;g++;for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){if(a[i][j]>0){if(u[i]!==null&&v[j]===null){v[j]=c[i][j]-u[i];changed=true;}if(v[j]!==null&&u[i]===null){u[i]=c[i][j]-v[j];changed=true;}}}}
+  for(let i=0;i<rows;i++)if(u[i]===null)u[i]=0;for(let j=0;j<cols;j++)if(v[j]===null)v[j]=0;
+  return{u,v};
+}
+
+function computeDeltas(c,u,v,a,rows,cols){
+  let d=Array.from({length:rows},()=>Array(cols).fill(0));
+  for(let i=0;i<rows;i++)for(let j=0;j<cols;j++)d[i][j]=a[i][j]>0?0:c[i][j]-u[i]-v[j];
+  return d;
+}
+
+function findLoop(a,rows,cols,si,sj){
+  const basic=[];for(let i=0;i<rows;i++)for(let j=0;j<cols;j++)if(a[i][j]>0)basic.push([i,j]);
+  const cells=[[si,sj],...basic];
+  function dfs(path,last,dir){
+    const[ci,cj]=last;
+    if(path.length>3){const[fi,fj]=path[0];if(dir==='row'&&ci===fi)return path;if(dir==='col'&&cj===fj)return path;}
+    if(path.length>2*cells.length)return null;
+    for(const[ni,nj]of cells){
+      if(dir==='row'&&ni!==ci)continue;if(dir==='col'&&nj!==cj)continue;
+      if(path.some(([pi,pj])=>pi===ni&&pj===nj))continue;
+      const res=dfs([...path,[ni,nj]],[ni,nj],dir==='row'?'col':'row');
+      if(res)return res;
+    }
+    return null;
+  }
+  return dfs([[si,sj]],[si,sj],'col')||dfs([[si,sj]],[si,sj],'row');
+}
+
+function doLoop(a,loop){
+  let minVal=Infinity,leaving=null;
+  for(let k=1;k<loop.length;k+=2){const[i,j]=loop[k];if(a[i][j]<minVal){minVal=a[i][j];leaving={i,j};}}
+  for(let k=0;k<loop.length;k++){const[i,j]=loop[k];a[i][j]+=(k%2===0?minVal:-minVal);}
+  return leaving;
+}
+
+function renderOptimize(c,a,log,rows,cols){
+  let h=`<p class="section-title">Iteraciones del método MODI — multiplicadores UV</p>`;
+  log.forEach((step,idx)=>{
+    if(step.type==='optimal'){
+      h+=`<div class="card" style="margin-top:1rem"><div class="ok"><i class="ti ti-check" aria-hidden="true"></i> <strong>Solución óptima encontrada</strong> — Costo = $${step.cost.toLocaleString()}${idx===0?' (la solución inicial ya era óptima)':`— ${idx} iteración${idx!==1?'es':''}`}</div>`;
+    }else{
+      h+=`<div class="card" style="margin-top:1rem"><p class="section-title" style="margin-top:0">Iteración ${step.iter}</p>`;
+      h+=`<div class="info">Variable entrante: O${step.entering.i+1}→D${step.entering.j+1} (δ = ${step.deltas[step.entering.i][step.entering.j].toFixed(2)}) &nbsp;|&nbsp; Variable saliente: O${step.leaving.i+1}→D${step.leaving.j+1}</div>`;
+    }
+    h+=`<div class="tbl-wrap"><table style="table-layout:fixed"><thead><tr><th style="width:90px"></th>`;
+    for(let j=0;j<cols;j++) h+=`<th>D${j+1}<br><small style="color:#085041">v${j+1}=${step.v[j]!==null?step.v[j].toFixed(0):'?'}</small></th>`;
+    h+=`<th style="background:#EEEDFE;color:#3C3489;width:52px">u<sub>i</sub></th></tr></thead><tbody>`;
+    for(let i=0;i<rows;i++){
+      h+=`<tr><th style="font-size:12px">O${i+1}<br><small style="color:#993C1D">u${i+1}=${step.u[i]!==null?step.u[i].toFixed(0):'?'}</small></th>`;
+      for(let j=0;j<cols;j++){
+        const isB=step.a[i][j]>0,delta=step.deltas[i][j];
+        const isE=step.type!=='optimal'&&step.entering.i===i&&step.entering.j===j;
+        const isL=step.type!=='optimal'&&step.leaving&&step.leaving.i===i&&step.leaving.j===j;
+        let sty=isB?'background:#EEEDFE':'';
+        if(delta<0&&!isB)sty='background:#FCEBEB';
+        if(isE)sty+=(sty?';':'')+'outline:2px solid #EF9F27';
+        if(isL)sty+=(sty?';':'')+'outline:2px solid #E24B4A';
+        h+=`<td style="${sty}"><div style="font-size:10px;color:var(--color-text-secondary)">${c[i][j]}</div>${isB?`<div style="font-weight:500;color:#534AB7">${step.a[i][j]}</div>`:`<div style="font-size:11px;color:${delta<0?'#A32D2D':delta===0?'#BA7517':'var(--color-text-secondary)'}">δ=${delta.toFixed(1)}</div>`}</td>`;
+      }
+      h+=`<td style="background:#EEEDFE;color:#3C3489;font-weight:500">${step.u[i]!==null?step.u[i].toFixed(0):'?'}</td></tr>`;
+    }
+    h+=`<tr><td style="background:#E1F5EE;color:#085041;font-weight:500;font-size:12px">v<sub>j</sub></td>`;
+    for(let j=0;j<cols;j++) h+=`<td style="background:#E1F5EE;color:#085041;font-weight:500">${step.v[j]!==null?step.v[j].toFixed(0):'?'}</td>`;
+    h+=`<td style="background:#E1F5EE;color:#085041;font-weight:500">$${step.cost.toLocaleString()}</td></tr></tbody></table></div>`;
+    if(step.type==='optimal') h+=`<p style="font-size:12px;color:var(--color-text-secondary);margin-top:8px"><i class="ti ti-info-circle" aria-hidden="true"></i> Todos los costos reducidos δ<sub>ij</sub> ≥ 0 — no hay mejora posible.</p>`;
+    h+=`</div>`;
+  });
+  document.getElementById('optimize-content').innerHTML=h;
+  document.getElementById('status-badge').textContent='Óptimo';
+  document.getElementById('status-badge').className='badge badge-opt';
+}
+
+function renderSummary(c,rows,cols){
+  const a=optAllocs,cost=calcCost(c,a,rows,cols);
+  let h=`<div class="card"><p class="section-title">Solución óptima final</p>`;
+  h+=`<div class="result-box" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:1rem"><div><div class="cost-label">Costo mínimo total</div><div class="cost-big">$${cost.toLocaleString()}</div></div><div><div class="cost-label">Ahorro vs inicial</div><div style="font-size:18px;font-weight:500;color:#1D9E75">$${(initCost-cost).toLocaleString()}</div></div><div><div class="cost-label">Rutas activas</div><div style="font-size:18px;font-weight:500">${a.flat().filter(v=>v>0).length}</div></div></div>`;
+  h+=`<div class="tbl-wrap"><table><thead><tr><th>Origen \\ Destino</th>`;
+  for(let j=0;j<cols;j++) h+=`<th>D${j+1}</th>`;
+  h+=`<th style="background:#E1F5EE;color:#085041">Total enviado</th></tr></thead><tbody>`;
+  for(let i=0;i<rows;i++){
+    let rt=0;h+=`<tr><th>O${i+1}</th>`;
+    for(let j=0;j<cols;j++){const v=a[i][j];rt+=v;h+=`<td${v>0?' style="background:#EEEDFE"':''}>${v>0?`<div style="font-size:10px;color:var(--color-text-secondary)">${c[i][j]}</div><div style="font-weight:500;color:#534AB7">${v}</div>`:`<small style="color:var(--color-text-secondary)">—</small>`}</td>`;}
+    h+=`<td style="background:#EEEDFE;color:#3C3489;font-weight:500">${rt}</td></tr>`;
+  }
+  h+=`</tbody></table></div><p class="section-title" style="margin-top:1rem">Desglose por ruta</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">`;
+  for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){
+    if(a[i][j]>0) h+=`<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px"><div style="font-size:12px;color:var(--color-text-secondary)">O${i+1} → D${j+1}</div><div style="font-weight:500;font-size:14px">${a[i][j]} unidades</div><div style="font-size:12px;color:#534AB7">$${c[i][j]} × ${a[i][j]} = <strong>$${(c[i][j]*a[i][j]).toLocaleString()}</strong></div></div>`;
+  }
+  h+=`</div></div>`;
+  document.getElementById('summary-content').innerHTML=h;
+}
+
+renderExamples();
+buildMatrix();
+loadExample(0);
+</script>

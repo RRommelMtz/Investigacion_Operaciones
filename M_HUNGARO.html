@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método Húngaro — Investigación de Operaciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --bg2: #161922; --bg3: #1e2230;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+    --text: #e8eaf2; --text2: #8b8fa8; --text3: #5a5e75;
+    --accent: #6c8cff; --accent2: #3d5af1;
+    --gold: #f0c060; --green: #4ade80; --green2: #22c55e;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  body { font-family: 'Figtree', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  header { text-align: center; padding: 3.5rem 2rem 2.5rem; border-bottom: 0.5px solid var(--border); }
+  .header-tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); background: rgba(108,140,255,0.1); border: 0.5px solid rgba(108,140,255,0.3); padding: 4px 12px; border-radius: 20px; margin-bottom: 1rem; }
+  header h1 { font-family: 'Instrument Serif', serif; font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; }
+  header h1 em { font-style: italic; color: var(--gold); }
+  header p { margin-top: 0.75rem; color: var(--text2); font-size: 15px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+  main { max-width: 1060px; margin: 0 auto; padding: 2rem 1.5rem 4rem; display: flex; flex-direction: column; gap: 2rem; }
+  .card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.75rem; }
+  .card-title { font-size: 13px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text2); letter-spacing: 0.08em; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px; }
+  .card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; flex-shrink: 0; }
+  .size-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .size-row label { font-size: 14px; color: var(--text2); }
+  .size-btn { width: 40px; height: 40px; border-radius: var(--radius-sm); border: 0.5px solid var(--border2); background: var(--bg3); color: var(--text2); font-family: 'DM Mono', monospace; font-size: 14px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .size-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .size-btn.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
+  .matrix-container { overflow-x: auto; padding-bottom: 0.5rem; }
+  table.input-table { border-collapse: collapse; }
+  table.input-table th { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); padding: 0 4px 8px; text-align: center; }
+  table.input-table td { padding: 3px; }
+  table.input-table .row-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); padding-right: 8px; text-align: right; white-space: nowrap; }
+  .cell-input { width: 68px; height: 52px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-family: 'DM Mono', monospace; font-size: 16px; text-align: center; outline: none; transition: border-color 0.15s, background 0.15s; }
+  .cell-input:focus { border-color: var(--accent); background: var(--bg); }
+  .cell-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1.5rem; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #fff; border: none; padding: 0 24px; height: 44px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; font-family: 'Figtree', sans-serif; cursor: pointer; transition: opacity 0.15s, transform 0.1s; display: flex; align-items: center; gap: 8px; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary { background: transparent; color: var(--text2); border: 0.5px solid var(--border2); padding: 0 20px; height: 44px; border-radius: var(--radius-sm); font-size: 14px; font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.15s; }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text3); }
+  #steps-section { display: none; }
+  #steps-section.visible { display: block; }
+  .steps-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 1.75rem; }
+  .step-dot { flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid var(--border); cursor: pointer; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3); transition: all 0.15s; white-space: nowrap; background: transparent; }
+  .step-dot:hover { color: var(--text2); border-color: var(--border2); }
+  .step-dot.active { background: var(--bg3); color: var(--accent); border-color: var(--accent); }
+  .step-dot.done { color: var(--green); border-color: rgba(74,222,128,0.3); }
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+  .step-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .step-number { flex-shrink: 0; width: 36px; height: 36px; background: rgba(108,140,255,0.15); border: 0.5px solid rgba(108,140,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); }
+  .step-info h3 { font-size: 17px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .step-info p { font-size: 13px; color: var(--text2); line-height: 1.6; max-width: 640px; }
+  .matrix-wrap { overflow-x: auto; margin: 1rem 0; }
+  table.matrix-display { border-collapse: separate; border-spacing: 4px; }
+  table.matrix-display th { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); padding: 0 2px 8px; text-align: center; min-width: 60px; }
+  table.matrix-display .row-lbl { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); padding-right: 10px; text-align: right; white-space: nowrap; }
+  .mcell { min-width: 60px; height: 50px; border-radius: 6px; text-align: center; font-family: 'DM Mono', monospace; font-size: 15px; color: var(--text); background: var(--bg3); border: 0.5px solid var(--border); vertical-align: middle; transition: background 0.2s, border-color 0.2s; }
+  .mcell.hl-min  { background: rgba(240,192,96,0.15); border-color: rgba(240,192,96,0.5); color: var(--gold); }
+  .mcell.hl-zero { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.4); color: var(--green); font-weight: 500; }
+  .mcell.hl-assigned { background: rgba(74,222,128,0.28); border-color: var(--green2); color: var(--green); font-weight: 600; }
+  .mcell.hl-extra-min { background: rgba(108,140,255,0.12); border-color: rgba(108,140,255,0.4); color: var(--accent); }
+  .info-box { border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; line-height: 1.6; margin: 12px 0; }
+  .info-box.blue  { background: rgba(108,140,255,0.08); border: 0.5px solid rgba(108,140,255,0.25); color: #aab8ff; }
+  .info-box.green { background: rgba(74,222,128,0.08); border: 0.5px solid rgba(74,222,128,0.25); color: #86efac; }
+  .info-box.gold  { background: rgba(240,192,96,0.08); border: 0.5px solid rgba(240,192,96,0.25); color: #fde68a; }
+  .info-box.red   { background: rgba(255,107,122,0.08); border: 0.5px solid rgba(255,107,122,0.25); color: #fca5a5; }
+  .info-box strong { font-weight: 500; }
+  .mini-table { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); border-collapse: collapse; margin: 8px 0; }
+  .mini-table td, .mini-table th { padding: 4px 10px; border: 0.5px solid var(--border); text-align: center; }
+  .mini-table th { color: var(--text3); }
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 1.25rem 0; }
+  .result-card { background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; text-align: center; }
+  .result-card .rc-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); margin-bottom: 6px; }
+  .result-card .rc-val { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .rc-val.green  { color: var(--green); }
+  .rc-val.gold   { color: var(--gold); }
+  .rc-val.accent { color: var(--accent); }
+  .assignment-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg3); border: 0.5px solid rgba(74,222,128,0.2); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13px; font-family: 'DM Mono', monospace; }
+  .assignment-row .arr { color: var(--green); font-size: 16px; }
+  .assignment-row .cost { margin-left: auto; color: var(--gold); }
+  .step-nav-buttons { display: flex; gap: 10px; margin-top: 1.5rem; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease forwards; }
+  @media (max-width:600px) { header { padding: 2rem 1rem 1.5rem; } main { padding: 1rem 0.75rem 3rem; } .card { padding: 1.1rem; } .cell-input { width: 54px; height: 46px; font-size: 14px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">Investigación de Operaciones</div>
+  <h1>Método <em>Húngaro</em></h1>
+  <p>Resolución paso a paso del problema de asignación óptima — minimización de costos.</p>
+</header>
+
+<main>
+  <div class="card" id="config-card">
+    <div class="card-title"><span class="dot"></span>CONFIGURAR MATRIZ</div>
+    <div class="size-row">
+      <label>Tamaño:</label>
+      <button class="size-btn" onclick="setSize(2)">2</button>
+      <button class="size-btn" onclick="setSize(3)">3</button>
+      <button class="size-btn active" onclick="setSize(4)">4</button>
+      <button class="size-btn" onclick="setSize(5)">5</button>
+      <button class="size-btn" onclick="setSize(6)">6</button>
+      <button class="size-btn" onclick="setSize(7)">7</button>
+      <button class="size-btn" onclick="setSize(8)">8</button>
+    </div>
+    <div class="matrix-container">
+      <div id="input-matrix"></div>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" onclick="solve()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
+        Resolver
+      </button>
+      <button class="btn-secondary" onclick="loadExample()">Cargar ejemplo</button>
+      <button class="btn-secondary" onclick="clearMatrix()">Limpiar</button>
+    </div>
+  </div>
+
+  <div class="card" id="steps-section">
+    <div class="card-title"><span class="dot"></span>SOLUCIÓN PASO A PASO</div>
+    <div class="steps-nav" id="steps-nav"></div>
+    <div id="steps-content"></div>
+  </div>
+</main>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let N = 4;
+let steps = [];
+
+// ─── MATRIX INPUT ────────────────────────────────────────────────────────────
+function setSize(n) {
+  N = n;
+  document.querySelectorAll('.size-btn').forEach((b, i) => {
+    b.classList.toggle('active', [2,3,4,5,6,7,8][i] === n);
+  });
+  buildInputMatrix();
+  document.getElementById('steps-section').classList.remove('visible');
+}
+
+function buildInputMatrix() {
+  const rows = ['T1','T2','T3','T4','T5','T6','T7','T8'].slice(0, N);
+  const cols = ['C1','C2','C3','C4','C5','C6','C7','C8'].slice(0, N);
+  let html = '<table class="input-table"><tr><th></th>';
+  cols.forEach(c => html += `<th>${c}</th>`);
+  html += '</tr>';
+  rows.forEach((r, i) => {
+    html += `<tr><td class="row-label">${r}</td>`;
+    cols.forEach((c, j) => {
+      html += `<td><input class="cell-input" type="number" id="c${i}_${j}" min="0" max="9999" placeholder="0"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('input-matrix').innerHTML = html;
+}
+
+function getMatrix() {
+  let m = [];
+  for (let i = 0; i < N; i++) {
+    let row = [];
+    for (let j = 0; j < N; j++) {
+      let v = parseFloat(document.getElementById(`c${i}_${j}`).value);
+      row.push(isNaN(v) ? 0 : v);
+    }
+    m.push(row);
+  }
+  return m;
+}
+
+const EXAMPLES = {
+  2: [[4,2],[3,1]],
+  3: [[9,2,7],[3,6,4],[5,8,1]],
+  4: [[9,2,7,8],[6,4,3,7],[5,8,1,8],[7,6,9,4]],
+  5: [[7,5,9,8,11],[9,6,5,10,7],[3,10,8,6,5],[8,4,7,9,6],[5,8,6,7,4]],
+  6: [[10,19,8,15,19,11],[10,18,7,17,19,12],[13,16,9,14,19,10],[12,19,8,18,20,11],[14,17,10,19,21,13],[9,18,6,16,18,10]],
+  7: [[7,5,3,6,9,8,4],[4,8,2,5,7,6,3],[6,3,7,4,8,5,9],[5,6,4,3,7,9,8],[8,4,6,7,5,3,2],[3,7,5,8,4,6,5],[6,5,8,4,3,7,6]],
+  8: [[12,7,9,8,11,6,10,13],[8,10,5,9,12,7,11,8],[6,9,11,7,10,8,9,12],[10,8,7,11,9,10,8,6],[9,11,10,6,8,12,7,9],[7,6,8,10,13,9,11,8],[11,9,6,8,10,7,12,10],[8,12,10,9,7,11,6,9]]
+};
+
+function loadExample() {
+  const ex = EXAMPLES[N];
+  if (!ex) return;
+  for (let i = 0; i < N; i++)
+    for (let j = 0; j < N; j++)
+      document.getElementById(`c${i}_${j}`).value = ex[i][j];
+}
+
+function clearMatrix() {
+  for (let i = 0; i < N; i++)
+    for (let j = 0; j < N; j++)
+      document.getElementById(`c${i}_${j}`).value = '';
+  document.getElementById('steps-section').classList.remove('visible');
+}
+
+// ─── MATRIX HELPERS ──────────────────────────────────────────────────────────
+function copyM(m) { return m.map(r => [...r]); }
+
+function matHTML(m, hl, showRowMin) {
+  const rows = ['T1','T2','T3','T4','T5','T6','T7','T8'].slice(0, m.length);
+  const cols = ['C1','C2','C3','C4','C5','C6','C7','C8'].slice(0, m[0].length);
+  let h = '<table class="matrix-display"><tr><th></th>';
+  cols.forEach(c => h += `<th>${c}</th>`);
+  if (showRowMin) h += '<th style="color:var(--gold);font-size:10px;padding-left:6px;">mín</th>';
+  h += '</tr>';
+  m.forEach((row, i) => {
+    h += `<tr><td class="row-lbl">${rows[i]}</td>`;
+    row.forEach((v, j) => {
+      let cls = 'mcell';
+      if (hl && hl[i] && hl[i][j]) cls += ' ' + hl[i][j];
+      const d = Number.isInteger(v) ? v : parseFloat(v.toFixed(2));
+      h += `<td class="${cls}">${d}</td>`;
+    });
+    if (showRowMin) {
+      const mn = Math.min(...row);
+      h += `<td class="mcell hl-min">${mn}</td>`;
+    }
+    h += '</tr>';
+  });
+  h += '</table>';
+  return h;
+}
+
+function setHL(hl, i, j, cls) {
+  if (!hl[i]) hl[i] = {};
+  hl[i][j] = cls;
+}
+
+// ─── HUNGARIAN ALGORITHM ────────────────────────────────────────────────────
+// Proper Munkres/Hungarian with step-by-step tracking
+// Returns assignment array: result[i] = j means row i is assigned to col j
+
+function hungarian(costMatrix) {
+  const n = costMatrix.length;
+  let C = costMatrix.map(r => [...r]);
+
+  // Step 1: row reduction
+  for (let i = 0; i < n; i++) {
+    const mn = Math.min(...C[i]);
+    for (let j = 0; j < n; j++) C[i][j] -= mn;
+  }
+
+  // Step 2: col reduction
+  for (let j = 0; j < n; j++) {
+    let mn = Infinity;
+    for (let i = 0; i < n; i++) if (C[i][j] < mn) mn = C[i][j];
+    for (let i = 0; i < n; i++) C[i][j] -= mn;
+  }
+
+  // Hungarian augmenting path assignment
+  // We iterate: find assignment, if incomplete find min uncovered, adjust, repeat
+  const MAX_ITER = 100;
+  for (let iter = 0; iter < MAX_ITER; iter++) {
+    const assignment = findAssignment(C, n);
+    if (assignment !== null) return assignment;
+
+    // Find minimum lines to cover all zeros (König's theorem based)
+    const { rowCov, colCov } = minLines(C, n);
+
+    // Find minimum uncovered value
+    let minVal = Infinity;
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++)
+        if (!rowCov[i] && !colCov[j] && C[i][j] < minVal)
+          minVal = C[i][j];
+
+    if (minVal === Infinity || minVal === 0) break; // safety
+
+    // Adjust matrix
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++) {
+        if (!rowCov[i] && !colCov[j]) C[i][j] -= minVal;
+        else if (rowCov[i] && colCov[j]) C[i][j] += minVal;
+      }
+  }
+
+  // Fallback: return best greedy assignment
+  return greedyAssign(C, n);
+}
+
+// Augmenting path matching (Hopcroft-Karp style single augment)
+function findAssignment(C, n) {
+  const rowMatch = new Array(n).fill(-1);
+  const colMatch = new Array(n).fill(-1);
+  let matched = 0;
+
+  for (let i = 0; i < n; i++) {
+    const visited = new Array(n).fill(false);
+    if (augment(C, n, i, visited, rowMatch, colMatch)) matched++;
+  }
+
+  if (matched === n) return rowMatch;
+  return null;
+}
+
+function augment(C, n, u, visited, rowMatch, colMatch) {
+  for (let v = 0; v < n; v++) {
+    if (C[u][v] === 0 && !visited[v]) {
+      visited[v] = true;
+      if (colMatch[v] === -1 || augment(C, n, colMatch[v], visited, rowMatch, colMatch)) {
+        rowMatch[u] = v;
+        colMatch[v] = u;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Minimum vertex cover (for adjusting the matrix)
+function minLines(C, n) {
+  // First find maximum matching
+  const rowMatch = new Array(n).fill(-1);
+  const colMatch = new Array(n).fill(-1);
+  for (let i = 0; i < n; i++) {
+    const visited = new Array(n).fill(false);
+    augment(C, n, i, visited, rowMatch, colMatch);
+  }
+
+  // König's theorem: find minimum vertex cover
+  // Mark unmatched rows
+  const markedRows = new Array(n).fill(false);
+  const markedCols = new Array(n).fill(false);
+  for (let i = 0; i < n; i++) if (rowMatch[i] === -1) markedRows[i] = true;
+
+  // Alternating path BFS
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < n; i++) {
+      if (markedRows[i]) {
+        for (let j = 0; j < n; j++) {
+          if (C[i][j] === 0 && !markedCols[j]) {
+            markedCols[j] = true; changed = true;
+          }
+        }
+      }
+    }
+    for (let j = 0; j < n; j++) {
+      if (markedCols[j] && colMatch[j] !== -1 && !markedRows[colMatch[j]]) {
+        markedRows[colMatch[j]] = true; changed = true;
+      }
+    }
+  }
+
+  // Cover = unmarked rows + marked cols
+  const rowCov = markedRows.map(v => !v);
+  const colCov = markedCols;
+  return { rowCov, colCov };
+}
+
+function greedyAssign(C, n) {
+  const rowMatch = new Array(n).fill(-1);
+  const colUsed = new Array(n).fill(false);
+  // Sort rows by number of zeros ascending
+  const order = Array.from({length:n},(_,i)=>i)
+    .sort((a,b) => C[a].filter(v=>v===0).length - C[b].filter(v=>v===0).length);
+  for (const i of order) {
+    for (let j = 0; j < n; j++) {
+      if (C[i][j] === 0 && !colUsed[j]) {
+        rowMatch[i] = j; colUsed[j] = true; break;
+      }
+    }
+  }
+  return rowMatch;
+}
+
+// ─── SOLVER (builds steps) ───────────────────────────────────────────────────
+function solve() {
+  const original = getMatrix();
+  steps = [];
+  let m = copyM(original);
+  const n = N;
+  const rowNames = ['T1','T2','T3','T4','T5','T6','T7','T8'].slice(0,n);
+  const colNames = ['C1','C2','C3','C4','C5','C6','C7','C8'].slice(0,n);
+
+  // ── PASO 1: Reducción de filas ──────────────────────────────────────────
+  const before1 = copyM(m);
+  const rowMins = m.map(r => Math.min(...r));
+
+  // Highlight minimums in original
+  const hl1before = {};
+  before1.forEach((row, i) => row.forEach((v, j) => {
+    if (v === rowMins[i]) setHL(hl1before, i, j, 'hl-min');
+  }));
+
+  m = m.map((row, i) => row.map(v => v - rowMins[i]));
+  const after1 = copyM(m);
+
+  const hl1after = {};
+  after1.forEach((row, i) => row.forEach((v, j) => {
+    if (v === 0) setHL(hl1after, i, j, 'hl-zero');
+  }));
+
+  const rowMinRows = rowMins.map((mn, i) =>
+    `<tr><td>${rowNames[i]}</td><td>${mn}</td><td>${mn > 0 ? '✓ restado' : '0 (sin cambio)'}</td></tr>`).join('');
+
+  steps.push({
+    num: 1,
+    title: 'Reducción de filas',
+    desc: 'Se toma el valor mínimo de cada fila y se resta a todos los elementos de esa fila. Garantiza al menos un cero por fila.',
+    content: `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:0.75rem;">Matriz original — mínimos de cada fila resaltados en amarillo:</p>
+      <div class="matrix-wrap">${matHTML(before1, hl1before, true)}</div>
+      <div class="info-box blue">
+        <strong>Valores restados por fila:</strong>
+        <table class="mini-table" style="margin-top:8px;">
+          <tr><th>Fila</th><th>Mínimo restado</th><th>Estado</th></tr>
+          ${rowMinRows}
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin:1rem 0 0.5rem;">Resultado — los ceros aparecen en verde:</p>
+      <div class="matrix-wrap">${matHTML(after1, hl1after)}</div>
+    `
+  });
+
+  // ── PASO 2: Reducción de columnas ──────────────────────────────────────
+  const before2 = copyM(m);
+  const colMins = Array.from({length:n}, (_, j) => Math.min(...m.map(r => r[j])));
+
+  const hl2before = {};
+  before2.forEach((row, i) => row.forEach((v, j) => {
+    if (v === colMins[j] && colMins[j] > 0) setHL(hl2before, i, j, 'hl-min');
+  }));
+
+  m = m.map(row => row.map((v, j) => v - colMins[j]));
+  const after2 = copyM(m);
+
+  const hl2after = {};
+  after2.forEach((row, i) => row.forEach((v, j) => {
+    if (v === 0) setHL(hl2after, i, j, 'hl-zero');
+  }));
+
+  const colMinRows = colMins.map((mn, j) =>
+    `<tr><td>${colNames[j]}</td><td>${mn}</td><td>${mn > 0 ? '✓ restado' : '0 (sin cambio)'}</td></tr>`).join('');
+
+  steps.push({
+    num: 2,
+    title: 'Reducción de columnas',
+    desc: 'Se toma el mínimo de cada columna y se resta. Las columnas que ya tienen un cero no se modifican.',
+    content: `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:0.75rem;">Resultado del paso 1 — mínimos de columna resaltados:</p>
+      <div class="matrix-wrap">${matHTML(before2, hl2before)}</div>
+      <div class="info-box blue">
+        <strong>Valores restados por columna:</strong>
+        <table class="mini-table" style="margin-top:8px;">
+          <tr><th>Columna</th><th>Mínimo</th><th>Estado</th></tr>
+          ${colMinRows}
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin:1rem 0 0.5rem;">Matriz reducida (con ceros por filas y columnas):</p>
+      <div class="matrix-wrap">${matHTML(after2, hl2after)}</div>
+    `
+  });
+
+  // ── PASO 3: Asignación ──────────────────────────────────────────────────
+  const reducedFinal = copyM(m);
+  const assignment = hungarian(copyM(m)); // assignment[i] = j
+
+  const hl3 = {};
+  reducedFinal.forEach((row, i) => row.forEach((v, j) => {
+    if (v === 0) setHL(hl3, i, j, assignment[i] === j ? 'hl-assigned' : 'hl-zero');
+  }));
+
+  const assignRows = assignment.map((col, row) =>
+    `<div class="assignment-row">
+      <span style="color:var(--text2);">Tarea ${row+1} (${rowNames[row]})</span>
+      <span class="arr">→</span>
+      <span style="color:var(--text);">Colaborador ${col+1} (${colNames[col]})</span>
+      <span class="cost">Costo: ${original[row][col]}</span>
+    </div>`).join('');
+
+  const total = assignment.reduce((s, col, row) => s + original[row][col], 0);
+
+  steps.push({
+    num: 3,
+    title: 'Asignación de ceros',
+    desc: 'Se buscan ceros en la matriz reducida. Cada fila debe asignarse a exactamente una columna diferente (un cero por fila y por columna).',
+    content: `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:0.75rem;">Ceros disponibles — las celdas asignadas se marcan con verde brillante:</p>
+      <div class="matrix-wrap">${matHTML(reducedFinal, hl3)}</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-swatch" style="background:rgba(74,222,128,0.28);border:0.5px solid var(--green2);"></div>Cero asignado (seleccionado)</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:rgba(74,222,128,0.12);border:0.5px solid rgba(74,222,128,0.4);"></div>Cero disponible (no usado)</div>
+      </div>
+      <div class="info-box green" style="margin-top:1rem;"><strong>Asignaciones encontradas:</strong></div>
+      ${assignRows}
+    `
+  });
+
+  // ── PASO 4: Resultado final ─────────────────────────────────────────────
+  const hlFinal = {};
+  assignment.forEach((col, row) => setHL(hlFinal, row, col, 'hl-assigned'));
+
+  const resultRows = assignment.map((col, row) =>
+    `<div class="assignment-row">
+      <span style="color:var(--text2);">${rowNames[row]}</span>
+      <span class="arr">→</span>
+      <span style="color:var(--text);">${colNames[col]}</span>
+      <span class="cost">${original[row][col]}</span>
+    </div>`).join('');
+
+  steps.push({
+    num: 4,
+    title: 'Resultado final',
+    desc: 'Asignación óptima sobre la matriz original. La suma de los costos seleccionados es el mínimo posible.',
+    content: `
+      <p style="font-size:13px;color:var(--text2);margin-bottom:0.75rem;">Matriz de costos original — celdas asignadas resaltadas:</p>
+      <div class="matrix-wrap">${matHTML(original, hlFinal)}</div>
+      <div class="result-grid" style="margin-top:1.5rem;">
+        <div class="result-card">
+          <div class="rc-label">COSTO TOTAL MÍNIMO</div>
+          <div class="rc-val green">${total}</div>
+        </div>
+        <div class="result-card">
+          <div class="rc-label">ASIGNACIONES</div>
+          <div class="rc-val accent">${n}</div>
+        </div>
+        <div class="result-card">
+          <div class="rc-label">MATRIZ</div>
+          <div class="rc-val gold">${n}×${n}</div>
+        </div>
+      </div>
+      <div class="info-box green"><strong>Asignación óptima:</strong></div>
+      ${resultRows}
+      <div class="info-box gold" style="margin-top:0.75rem;">
+        Costo mínimo global = <strong>${total}</strong>. Ninguna otra combinación de asignaciones produce un costo menor.
+      </div>
+    `
+  });
+
+  renderSteps();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function renderSteps() {
+  const sec = document.getElementById('steps-section');
+  sec.classList.add('visible', 'animate-in');
+
+  document.getElementById('steps-nav').innerHTML = steps.map((s, i) =>
+    `<button class="step-dot ${i===0?'active':''}" onclick="goStep(${i})">
+      ${String(s.num).padStart(2,'0')} ${s.title}
+    </button>`).join('');
+
+  document.getElementById('steps-content').innerHTML = steps.map((s, i) =>
+    `<div class="step-panel ${i===0?'active':''}" id="panel-${i}">
+      <div class="step-header">
+        <div class="step-number">0${s.num}</div>
+        <div class="step-info"><h3>${s.title}</h3><p>${s.desc}</p></div>
+      </div>
+      ${s.content}
+      <div class="step-nav-buttons">
+        ${i > 0 ? `<button class="btn-secondary" onclick="goStep(${i-1})">← Anterior</button>` : ''}
+        ${i < steps.length-1 ? `<button class="btn-primary" onclick="goStep(${i+1})">Siguiente →</button>` : ''}
+      </div>
+    </div>`).join('');
+
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function goStep(idx) {
+  document.querySelectorAll('.step-panel').forEach((p, i) => p.classList.toggle('active', i===idx));
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i === idx) d.classList.add('active');
+    else if (i < idx) d.classList.add('done');
+  });
+}
+
+// Init
+buildInputMatrix();
+</script>
+</body>
+</html>

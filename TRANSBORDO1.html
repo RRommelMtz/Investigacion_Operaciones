@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Método de Trasbordo — Solver Profesional</title>
+<style>
+/* ===================================================
+   DESIGN TOKENS
+   =================================================== */
+:root {
+  --bg:          #0a0f1e;
+  --bg2:         #0d1428;
+  --surface:     #111c35;
+  --surface2:    #172040;
+  --border:      #1e2f55;
+  --border2:     #263660;
+  --cyan:        #00d4ff;
+  --cyan2:       #00aace;
+  --cyan-glow:   rgba(0,212,255,.15);
+  --blue:        #1a6fff;
+  --blue-dark:   #0e46b0;
+  --green:       #00e676;
+  --green-dark:  #00994f;
+  --red:         #ff4d6a;
+  --red-dark:    #c0001e;
+  --yellow:      #ffd740;
+  --text:        #e8f0fe;
+  --text2:       #8bacd8;
+  --text3:       #556b8e;
+  --radius:      12px;
+  --radius-sm:   8px;
+  --shadow:      0 4px 24px rgba(0,0,0,.5);
+  --shadow-lg:   0 8px 48px rgba(0,0,0,.7);
+  --transition:  .22s cubic-bezier(.4,0,.2,1);
+}
+.light-mode {
+  --bg:          #f0f4ff;
+  --bg2:         #e6ecf8;
+  --surface:     #ffffff;
+  --surface2:    #edf2ff;
+  --border:      #c3d2f0;
+  --border2:     #b0c4e8;
+  --cyan:        #007baa;
+  --cyan2:       #005f88;
+  --cyan-glow:   rgba(0,123,170,.12);
+  --blue:        #1a6fff;
+  --blue-dark:   #0e46b0;
+  --text:        #0d1428;
+  --text2:       #3a5070;
+  --text3:       #7090b0;
+  --shadow:      0 4px 24px rgba(0,0,0,.12);
+  --shadow-lg:   0 8px 48px rgba(0,0,0,.18);
+}
+
+/* ===================================================
+   RESET & BASE
+   =================================================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  transition:background var(--transition),color var(--transition);
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{line-height:1.2;font-weight:700}
+p{line-height:1.7;color:var(--text2)}
+a{color:var(--cyan);text-decoration:none}
+input,select,textarea{
+  background:var(--surface);
+  color:var(--text);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:.45rem .75rem;
+  font-size:.9rem;
+  transition:border-color var(--transition),box-shadow var(--transition);
+  outline:none;
+}
+input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-glow)}
+input[type=number]{width:80px;text-align:center}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--cyan)}
+label{font-size:.85rem;color:var(--text2)}
+table{border-collapse:collapse;width:100%}
+th,td{padding:.5rem .75rem;text-align:center;border:1px solid var(--border)}
+th{background:var(--surface2);color:var(--cyan);font-size:.82rem;letter-spacing:.04em;text-transform:uppercase}
+td{font-size:.88rem}
+tr:hover td{background:rgba(0,212,255,.04)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan2)}
+
+/* ===================================================
+   LAYOUT
+   =================================================== */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,15,30,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.75rem 2rem;
+}
+.light-mode .nav{background:rgba(240,244,255,.92)}
+.nav-brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.1rem;color:var(--cyan)}
+.nav-brand svg{flex-shrink:0}
+.nav-links{display:flex;gap:1.2rem;list-style:none}
+.nav-links a{color:var(--text2);font-size:.9rem;padding:.3rem .5rem;border-radius:6px;transition:color var(--transition),background var(--transition)}
+.nav-links a:hover{color:var(--cyan);background:var(--cyan-glow)}
+.nav-right{display:flex;align-items:center;gap:.75rem}
+
+.hero{
+  background:linear-gradient(135deg,var(--bg2) 0%,var(--surface) 60%,var(--bg2) 100%);
+  border-bottom:1px solid var(--border);
+  padding:5rem 2rem 4rem;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(0,212,255,.12),transparent);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-block;background:var(--cyan-glow);border:1px solid var(--cyan);
+  color:var(--cyan);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:.3rem .9rem;border-radius:999px;margin-bottom:1.2rem;
+}
+.hero h1{font-size:clamp(2rem,5vw,3.4rem);color:var(--text);margin-bottom:.8rem}
+.hero h1 span{color:var(--cyan)}
+.hero p{font-size:1.05rem;max-width:620px;margin:0 auto 2rem}
+.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+
+.container{max-width:1280px;margin:0 auto;padding:0 1.5rem}
+.section{padding:4rem 0}
+.section-title{font-size:1.6rem;color:var(--text);margin-bottom:.4rem}
+.section-title span{color:var(--cyan)}
+.section-sub{font-size:.95rem;color:var(--text2);margin-bottom:2.5rem}
+
+/* ===================================================
+   BUTTONS
+   =================================================== */
+.btn{
+  display:inline-flex;align-items:center;gap:.45rem;
+  padding:.6rem 1.4rem;border-radius:var(--radius-sm);
+  font-size:.9rem;font-weight:600;border:none;cursor:pointer;
+  transition:all var(--transition);text-decoration:none;white-space:nowrap;
+}
+.btn-primary{background:var(--cyan);color:#000}
+.btn-primary:hover{background:var(--cyan2);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,212,255,.35)}
+.btn-outline{background:transparent;color:var(--cyan);border:1.5px solid var(--cyan)}
+.btn-outline:hover{background:var(--cyan-glow);transform:translateY(-1px)}
+.btn-ghost{background:var(--surface);color:var(--text2);border:1.5px solid var(--border)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:var(--red-dark);transform:translateY(-1px)}
+.btn-success{background:var(--green);color:#000}
+.btn-success:hover{background:var(--green-dark);color:#fff;transform:translateY(-1px)}
+.btn-sm{padding:.4rem .9rem;font-size:.82rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+/* ===================================================
+   CARDS
+   =================================================== */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.5rem;
+  box-shadow:var(--shadow);
+  transition:border-color var(--transition),box-shadow var(--transition);
+}
+.card:hover{border-color:var(--border2)}
+.card-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.2rem}
+.card-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--cyan-glow);border:1px solid var(--cyan);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--cyan);font-size:1.2rem;
+}
+.card-title{font-size:1.05rem;color:var(--text);font-weight:600}
+
+/* ===================================================
+   THEORY SECTION
+   =================================================== */
+.theory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem}
+.theory-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;
+  transition:all var(--transition);
+}
+.theory-card:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:var(--shadow)}
+.theory-card h3{font-size:1rem;color:var(--text);margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.theory-card p{font-size:.88rem}
+.tag{
+  display:inline-block;padding:.2rem .65rem;border-radius:999px;font-size:.75rem;font-weight:600;
+}
+.tag-green{background:rgba(0,230,118,.12);color:var(--green);border:1px solid var(--green)}
+.tag-blue{background:rgba(26,111,255,.12);color:var(--blue);border:1px solid var(--blue)}
+.tag-cyan{background:var(--cyan-glow);color:var(--cyan);border:1px solid var(--cyan)}
+.tag-red{background:rgba(255,77,106,.12);color:var(--red);border:1px solid var(--red)}
+.tag-yellow{background:rgba(255,215,64,.12);color:var(--yellow);border:1px solid var(--yellow)}
+
+/* ===================================================
+   SOLVER SECTION
+   =================================================== */
+.solver-wrap{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.solver-tabs{
+  display:flex;border-bottom:1px solid var(--border);
+  background:var(--surface);overflow-x:auto;
+}
+.solver-tab{
+  padding:.85rem 1.4rem;font-size:.88rem;font-weight:600;cursor:pointer;
+  color:var(--text3);border:none;background:none;border-bottom:2.5px solid transparent;
+  transition:all var(--transition);white-space:nowrap;
+}
+.solver-tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.solver-tab:hover{color:var(--text);background:var(--cyan-glow)}
+.solver-panel{display:none;padding:1.5rem}
+.solver-panel.active{display:block;animation:fadeIn .25s ease}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 var(--cyan-glow)}50%{box-shadow:0 0 0 6px transparent}}
+
+/* Config grid */
+.config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.config-field label{display:block;margin-bottom:.4rem}
+.config-field input,
+.config-field select{width:100%}
+
+/* Cost matrix table */
+.table-wrap{overflow-x:auto;margin-top:.75rem;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.cost-input{width:72px!important;padding:.35rem .4rem!important}
+.inf-cell{display:flex;align-items:center;gap:.3rem;justify-content:center}
+.supply-input,.demand-input{width:72px!important;padding:.35rem .4rem!important;border-color:var(--green)!important}
+
+/* Results */
+.result-section{animation:slideUp .3s ease}
+.result-kpi{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;
+}
+.kpi-card{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:1rem;text-align:center;
+}
+.kpi-value{font-size:1.8rem;font-weight:700;color:var(--cyan)}
+.kpi-label{font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem}
+
+/* Math formulation */
+.math-block{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:1rem 1.2rem;font-family:'Courier New',monospace;font-size:.85rem;
+  color:var(--text2);line-height:1.8;overflow-x:auto;white-space:pre;
+}
+
+/* Network canvas */
+#networkCanvas{
+  border:1px solid var(--border);border-radius:var(--radius);
+  display:block;margin:0 auto;max-width:100%;
+  background:var(--bg2);
+}
+
+/* Alert */
+.alert{
+  padding:.85rem 1.1rem;border-radius:var(--radius-sm);margin-bottom:1rem;
+  font-size:.88rem;display:flex;align-items:flex-start;gap:.6rem;border-left:4px solid;
+  animation:fadeIn .25s ease;
+}
+.alert-error{background:rgba(255,77,106,.1);border-color:var(--red);color:var(--red)}
+.alert-success{background:rgba(0,230,118,.1);border-color:var(--green);color:var(--green)}
+.alert-info{background:var(--cyan-glow);border-color:var(--cyan);color:var(--cyan)}
+.alert-warn{background:rgba(255,215,64,.1);border-color:var(--yellow);color:var(--yellow)}
+
+/* Step badges */
+.step-list{counter-reset:step;list-style:none;display:flex;flex-direction:column;gap:.75rem}
+.step-list li{
+  counter-increment:step;display:flex;gap:1rem;align-items:flex-start;
+  padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+}
+.step-list li::before{
+  content:counter(step);
+  display:flex;align-items:center;justify-content:center;
+  min-width:28px;height:28px;border-radius:50%;
+  background:var(--cyan);color:#000;font-weight:700;font-size:.82rem;flex-shrink:0;
+}
+.step-list li .step-text{font-size:.88rem;color:var(--text2)}
+
+/* Toggle */
+.toggle-wrap{display:flex;align-items:center;gap:.6rem;cursor:pointer}
+.toggle{
+  width:44px;height:24px;border-radius:12px;
+  background:var(--border2);position:relative;transition:background var(--transition);cursor:pointer;border:none;
+}
+.toggle::after{
+  content:'';position:absolute;width:18px;height:18px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:transform var(--transition);
+}
+.toggle.on{background:var(--cyan)}
+.toggle.on::after{transform:translateX(20px)}
+
+/* Responsive nav */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hero{padding:3.5rem 1.2rem 3rem}
+  .solver-panel{padding:1rem}
+  .config-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .config-grid{grid-template-columns:1fr}
+  .hero-btns{flex-direction:column}
+}
+
+/* Scrollable result table */
+.result-table-wrap{overflow-x:auto}
+.highlight-row td{background:rgba(0,212,255,.08)!important;color:var(--cyan)!important;font-weight:600}
+.flow-nonzero{color:var(--green);font-weight:700}
+.flow-zero{color:var(--text3)}
+
+/* Loading spinner */
+.spinner{
+  display:inline-block;width:18px;height:18px;
+  border:2.5px solid var(--border);border-top-color:var(--cyan);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Footer */
+.footer{
+  border-top:1px solid var(--border);
+  background:var(--surface);
+  padding:2rem 1.5rem;
+  text-align:center;
+  color:var(--text3);
+  font-size:.83rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ===================================================
+     NAVIGATION
+     =================================================== -->
+<nav class="nav">
+  <div class="nav-brand">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <circle cx="5" cy="14" r="4" fill="var(--green)" opacity=".9"/>
+      <circle cx="14" cy="5" r="4" fill="var(--cyan)"/>
+      <circle cx="23" cy="14" r="4" fill="var(--red)" opacity=".9"/>
+      <circle cx="14" cy="23" r="4" fill="var(--cyan)"/>
+      <line x1="9" y1="14" x2="19" y2="14" stroke="var(--cyan)" stroke-width="1.5" opacity=".6"/>
+      <line x1="14" y1="9" x2="14" y2="19" stroke="var(--cyan)" stroke-width="1.5" opacity=".6"/>
+      <line x1="8" y1="11" x2="11" y2="8" stroke="var(--text3)" stroke-width="1.2"/>
+      <line x1="17" y1="8" x2="20" y2="11" stroke="var(--text3)" stroke-width="1.2"/>
+      <line x1="8" y1="17" x2="11" y2="20" stroke="var(--text3)" stroke-width="1.2"/>
+      <line x1="17" y1="20" x2="20" y2="17" stroke="var(--text3)" stroke-width="1.2"/>
+    </svg>
+    TransShip Solver
+  </div>
+  <ul class="nav-links">
+    <li><a href="#teoria">Teoría</a></li>
+    <li><a href="#solver">Calculadora</a></li>
+    <li><a href="#ejemplo">Ejemplo</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="toggle" id="themeToggle" title="Modo claro/oscuro" onclick="toggleTheme()"></button>
+    <span style="font-size:.78rem;color:var(--text3)" id="themeLabel">Oscuro</span>
+  </div>
+</nav>
+
+<!-- ===================================================
+     HERO
+     =================================================== -->
+<section class="hero">
+  <div class="hero-badge">Investigación de Operaciones</div>
+  <h1>Método de <span>Trasbordo</span></h1>
+  <p>Solver profesional con programación lineal, visualización de red y exportación de resultados. Resuelve problemas de flujo óptimo en redes de distribución multicapa.</p>
+  <div class="hero-btns">
+    <a href="#solver" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Ir a la Calculadora
+    </a>
+    <button class="btn btn-outline" onclick="loadExample()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Cargar Ejemplo
+    </button>
+    <a href="#teoria" class="btn btn-ghost">Ver Teoría</a>
+  </div>
+</section>
+
+<!-- ===================================================
+     TEORÍA
+     =================================================== -->
+<section class="section" id="teoria">
+  <div class="container">
+    <h2 class="section-title">Marco <span>Teórico</span></h2>
+    <p class="section-sub">Fundamentos del Método de Trasbordo en Investigación de Operaciones</p>
+
+    <div class="theory-grid" style="margin-bottom:2rem">
+      <div class="theory-card">
+        <h3><span style="color:var(--cyan);font-size:1.3rem">≡</span> ¿Qué es?</h3>
+        <p>El <strong style="color:var(--text)">Método de Trasbordo</strong> es una extensión del modelo de transporte clásico que permite el flujo de mercancías a través de nodos intermedios (<em>puntos de trasbordo</em>) antes de llegar a su destino final. Es un modelo de <strong style="color:var(--text)">red de flujo de mínimo costo</strong>.</p>
+      </div>
+      <div class="theory-card">
+        <h3><span style="color:var(--yellow);font-size:1.3rem">◎</span> Objetivo</h3>
+        <p>Determinar el <strong style="color:var(--text)">flujo óptimo</strong> a través de cada arco de la red para <strong style="color:var(--text)">minimizar el costo total</strong> de transporte, respetando la oferta de los orígenes, la demanda de los destinos y la conservación de flujo en los nodos de trasbordo.</p>
+      </div>
+      <div class="theory-card">
+        <h3><span style="color:var(--green);font-size:1.3rem">⇌</span> Vs. Transporte</h3>
+        <p>En el modelo de transporte tradicional, los bienes van <strong style="color:var(--text)">directamente</strong> de origen a destino. El modelo de trasbordo añade <strong style="color:var(--text)">nodos intermedios</strong> donde la mercancía puede acumularse, combinarse o redistribuirse, reflejando redes reales más complejas.</p>
+      </div>
+      <div class="theory-card">
+        <h3><span style="color:var(--blue);font-size:1.3rem">≋</span> Restricciones clave</h3>
+        <p><strong style="color:var(--green)">Oferta:</strong> flujo saliente de orígenes ≤ capacidad disponible.<br/>
+           <strong style="color:var(--cyan)">Trasbordo:</strong> flujo entrante = flujo saliente (conservación).<br/>
+           <strong style="color:var(--red)">Demanda:</strong> flujo entrante a destinos ≥ demanda requerida.</p>
+      </div>
+    </div>
+
+    <!-- Componentes -->
+    <h3 style="font-size:1.2rem;color:var(--text);margin-bottom:1rem">Componentes de la Red</h3>
+    <div class="theory-grid" style="margin-bottom:2rem">
+      <div class="theory-card">
+        <h3><span class="tag tag-green">O</span> Orígenes</h3>
+        <p>Nodos fuente con oferta disponible (supply). Pueden enviar mercancía a nodos de trasbordo o directamente a destinos. Restricción: flujo total saliente ≤ oferta.</p>
+      </div>
+      <div class="theory-card">
+        <h3><span class="tag tag-cyan">T</span> Nodos de Trasbordo</h3>
+        <p>Puntos intermedios sin oferta ni demanda propias. Funcionan como centros de distribución. La conservación de flujo garantiza que todo lo que entra también salga.</p>
+      </div>
+      <div class="theory-card">
+        <h3><span class="tag tag-red">D</span> Destinos</h3>
+        <p>Nodos sumidero con demanda que debe satisfacerse. Reciben mercancía desde orígenes o nodos de trasbordo. Restricción: flujo total entrante ≥ demanda.</p>
+      </div>
+      <div class="theory-card">
+        <h3><span class="tag tag-yellow">$</span> Costos</h3>
+        <p>Costo unitario por cada arco (O→T, T→T, T→D, O→D). Pueden ser distancias, tiempos o costos monetarios. Si no existe conexión, el costo es ∞ (prohibido).</p>
+      </div>
+    </div>
+
+    <!-- Aplicaciones -->
+    <h3 style="font-size:1.2rem;color:var(--text);margin-bottom:1rem">Aplicaciones Reales</h3>
+    <div class="theory-grid" style="margin-bottom:2rem">
+      <div class="theory-card"><h3>🚢 Logística marítima</h3><p>Distribución de contenedores a través de puertos intermedios antes de llegar al puerto destino final.</p></div>
+      <div class="theory-card"><h3>⚡ Redes eléctricas</h3><p>Transmisión de energía eléctrica a través de subestaciones de trasbordo hacia los centros de consumo.</p></div>
+      <div class="theory-card"><h3>📦 Cadenas de suministro</h3><p>Distribución de productos desde fábricas a centros de distribución y de estos a tiendas minoristas.</p></div>
+      <div class="theory-card"><h3>🏥 Salud pública</h3><p>Distribución de vacunas y medicamentos desde laboratorios a centros de acopio regionales y clínicas.</p></div>
+    </div>
+
+    <!-- Ventajas y Desventajas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div class="card">
+        <div class="card-header"><div class="card-icon" style="background:rgba(0,230,118,.12);border-color:var(--green);color:var(--green)">✓</div><div class="card-title">Ventajas</div></div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.6rem">
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--green)">Modela redes de distribución reales con múltiples capas</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--green)">Reduce costos al permitir rutas indirectas más económicas</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--green)">Formulación como PL: siempre encuentra solución óptima global</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--green)">Flexible: permite agregar/eliminar arcos y nodos fácilmente</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--green)">Extensión natural del modelo de transporte clásico</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon" style="background:rgba(255,77,106,.12);border-color:var(--red);color:var(--red)">✗</div><div class="card-title">Desventajas</div></div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:.6rem">
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--red)">Complejidad crece con el número de nodos y arcos</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--red)">Requiere datos precisos de costos en todos los arcos</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--red)">Asume costos lineales (no aplica a economías de escala sin extensión)</li>
+          <li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--red)">No modela restricciones de capacidad sin variables adicionales</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================
+     SOLVER
+     =================================================== -->
+<section class="section" id="solver" style="background:var(--bg2);border-top:1px solid var(--border)">
+  <div class="container">
+    <h2 class="section-title">Calculadora de <span>Trasbordo</span></h2>
+    <p class="section-sub">Ingresa los parámetros del problema y obtén la solución óptima automáticamente</p>
+
+    <div id="alertBox"></div>
+
+    <div class="solver-wrap">
+      <div class="solver-tabs">
+        <button class="solver-tab active" onclick="switchTab('config',this)">⚙ Configuración</button>
+        <button class="solver-tab" onclick="switchTab('datos',this)">📋 Datos</button>
+        <button class="solver-tab" onclick="switchTab('resultado',this)" id="tabResultado">📊 Resultados</button>
+        <button class="solver-tab" onclick="switchTab('red',this)" id="tabRed">🕸 Red</button>
+        <button class="solver-tab" onclick="switchTab('formulacion',this)" id="tabForm">∑ Formulación</button>
+      </div>
+
+      <!-- TAB: CONFIGURACIÓN -->
+      <div class="solver-panel active" id="tab-config">
+        <div class="config-grid">
+          <div class="config-field">
+            <label>Número de Orígenes</label>
+            <input type="number" id="nOrigen" min="1" max="8" value="2"/>
+          </div>
+          <div class="config-field">
+            <label>Nodos de Trasbordo</label>
+            <input type="number" id="nTrasbordo" min="1" max="8" value="2"/>
+          </div>
+          <div class="config-field">
+            <label>Número de Destinos</label>
+            <input type="number" id="nDestino" min="1" max="8" value="2"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="generateTables()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Generar Tablas
+          </button>
+          <button class="btn btn-outline" onclick="loadExample()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Cargar Ejemplo
+          </button>
+          <button class="btn btn-ghost" onclick="clearAll()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.24"/></svg>
+            Limpiar
+          </button>
+        </div>
+        <div class="alert alert-info" style="margin-top:1.2rem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Configura el número de nodos y pulsa <strong>Generar Tablas</strong>. Usa ∞ o deja en blanco para conexiones prohibidas.
+        </div>
+      </div>
+
+      <!-- TAB: DATOS -->
+      <div class="solver-panel" id="tab-datos">
+        <div id="tablas-contenido"><p style="color:var(--text3);text-align:center;padding:2rem 0">Genera las tablas primero en la pestaña Configuración.</p></div>
+        <div id="solve-btns" style="display:none;margin-top:1.5rem;display:none;gap:.75rem;flex-wrap:wrap">
+          <button class="btn btn-success" id="btnSolve" onclick="solve()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+            Resolver
+          </button>
+          <button class="btn btn-ghost" onclick="clearAll()">Limpiar</button>
+        </div>
+      </div>
+
+      <!-- TAB: RESULTADOS -->
+      <div class="solver-panel" id="tab-resultado">
+        <div id="resultContent"><p style="color:var(--text3);text-align:center;padding:2rem 0">Resuelve el problema primero.</p></div>
+      </div>
+
+      <!-- TAB: RED -->
+      <div class="solver-panel" id="tab-red">
+        <canvas id="networkCanvas" width="800" height="440"></canvas>
+        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem">
+          <span style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--text2)"><span style="width:14px;height:14px;border-radius:50%;background:var(--green);display:inline-block"></span>Orígenes</span>
+          <span style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--text2)"><span style="width:14px;height:14px;border-radius:50%;background:var(--cyan);display:inline-block"></span>Trasbordo</span>
+          <span style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--text2)"><span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-block"></span>Destinos</span>
+        </div>
+      </div>
+
+      <!-- TAB: FORMULACIÓN -->
+      <div class="solver-panel" id="tab-formulacion">
+        <div id="formContent"><p style="color:var(--text3);text-align:center;padding:2rem 0">Resuelve el problema para ver la formulación matemática.</p></div>
+      </div>
+    </div>
+
+    <!-- EXPORT BUTTONS (shown after solve) -->
+    <div id="exportBtns" style="display:none;margin-top:1.2rem;display:none;gap:.75rem;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="exportPDF()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Exportar PDF
+      </button>
+      <button class="btn btn-ghost" onclick="exportExcel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+        Exportar Excel
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================
+     EJEMPLO PASO A PASO
+     =================================================== -->
+<section class="section" id="ejemplo">
+  <div class="container">
+    <h2 class="section-title">Ejemplo <span>Resuelto</span></h2>
+    <p class="section-sub">Problema completo de trasbordo con 2 orígenes, 2 nodos de trasbordo y 2 destinos</p>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-header"><div class="card-icon">📖</div><div class="card-title">Planteamiento del Problema</div></div>
+      <p style="margin-bottom:1rem">Una empresa tiene <strong style="color:var(--green)">2 plantas de producción</strong> (O1: 200 u, O2: 300 u), <strong style="color:var(--cyan)">2 centros de distribución</strong> (T1, T2) y <strong style="color:var(--red)">2 almacenes destino</strong> (D1: 250 u, D2: 250 u). Se desea minimizar el costo total.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Arco</th><th>Costo unitario ($)</th><th>Arco</th><th>Costo unitario ($)</th></tr></thead>
+          <tbody>
+            <tr><td>O1 → T1</td><td>2</td><td>T1 → D1</td><td>3</td></tr>
+            <tr><td>O1 → T2</td><td>3</td><td>T1 → D2</td><td>5</td></tr>
+            <tr><td>O2 → T1</td><td>5</td><td>T2 → D1</td><td>4</td></tr>
+            <tr><td>O2 → T2</td><td>1</td><td>T2 → D2</td><td>2</td></tr>
+            <tr><td>T1 → T2</td><td>2</td><td>O1 → D1</td><td>∞</td></tr>
+            <tr><td>T2 → T1</td><td>∞</td><td>O2 → D2</td><td>∞</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="font-size:1.15rem;color:var(--text);margin-bottom:1rem">Solución Paso a Paso</h3>
+    <ol class="step-list">
+      <li><div class="step-text"><strong style="color:var(--text)">Identificar nodos y arcos.</strong> Tenemos n=6 nodos: O1, O2 (orígenes), T1, T2 (trasbordo), D1, D2 (destinos). Las conexiones forman la red de distribución.</div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Verificar balance:</strong> Oferta total = 200 + 300 = 500. Demanda total = 250 + 250 = 500. El problema está <span class="tag tag-green">BALANCEADO</span>. No se requieren variables artificiales.</div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Formular el modelo de PL:</strong><br/>
+        Minimizar: Z = 2x(O1T1) + 3x(O1T2) + 5x(O2T1) + x(O2T2) + 2x(T1T2) + 3x(T1D1) + 5x(T1D2) + 4x(T2D1) + 2x(T2D2)<br/>
+        Sujeto a restricciones de oferta, demanda y conservación de flujo.</div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Restricciones de oferta:</strong><br/>
+        x(O1T1) + x(O1T2) ≤ 200 &nbsp;(Planta O1)<br/>
+        x(O2T1) + x(O2T2) ≤ 300 &nbsp;(Planta O2)</div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Restricciones de trasbordo (conservación de flujo):</strong><br/>
+        T1: x(O1T1) + x(O2T1) = x(T1D1) + x(T1D2) + x(T1T2)<br/>
+        T2: x(O1T2) + x(O2T2) + x(T1T2) = x(T2D1) + x(T2D2)</div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Restricciones de demanda:</strong><br/>
+        x(T1D1) + x(T2D1) ≥ 250 &nbsp;(Almacén D1)<br/>
+        x(T1D2) + x(T2D2) ≥ 250 &nbsp;(Almacén D2)</div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Solución óptima encontrada (Simplex):</strong><br/>
+        O1→T1: <span class="flow-nonzero">200</span>, O2→T2: <span class="flow-nonzero">300</span>, T1→T2: <span class="flow-nonzero">50</span><br/>
+        T1→D1: <span class="flow-nonzero">150</span>, T2→D1: <span class="flow-nonzero">100</span>, T2→D2: <span class="flow-nonzero">250</span></div></li>
+      <li><div class="step-text"><strong style="color:var(--text)">Costo total mínimo:</strong><br/>
+        Z = 2(200) + 1(300) + 2(50) + 3(150) + 4(100) + 2(250)<br/>
+        Z = 400 + 300 + 100 + 450 + 400 + 500 = <strong style="color:var(--cyan);font-size:1.1rem">$2,150</strong></div></li>
+    </ol>
+
+    <div class="alert alert-success" style="margin-top:1.5rem">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Puedes reproducir este ejemplo exactamente usando el botón <strong>Cargar Ejemplo</strong> en la calculadora.
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================
+     FOOTER
+     =================================================== -->
+<footer class="footer">
+  <p>TransShip Solver &mdash; Método de Trasbordo &mdash; Investigación de Operaciones</p>
+  <p style="margin-top:.3rem">Programación Lineal &bull; Flujo en Redes &bull; Optimización Matemática</p>
+</footer>
+
+
+<!-- ===================================================
+     JAVASCRIPT — CORE ENGINE
+     =================================================== -->
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  nO: 2, nT: 2, nD: 2,
+  supply: [], demand: [],
+  costsOT: [], costsTT: [], costsTD: [], costsOD: [],
+  solution: null,
+  tableGenerated: false
+};
+
+const INF = 1e9;
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function toggleTheme(){
+  document.body.classList.toggle('light-mode');
+  const on = document.body.classList.contains('light-mode');
+  document.getElementById('themeToggle').classList.toggle('on', on);
+  document.getElementById('themeLabel').textContent = on ? 'Claro' : 'Oscuro';
+  if(state.solution) drawNetwork();
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name, btn){
+  document.querySelectorAll('.solver-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.solver-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='red' && state.solution) drawNetwork();
+}
+
+/* ============================================================
+   ALERT
+   ============================================================ */
+function showAlert(msg, type='error'){
+  const box = document.getElementById('alertBox');
+  const icons = {error:'⚠',success:'✓',info:'ℹ',warn:'⚡'};
+  box.innerHTML = `<div class="alert alert-${type}"><span>${icons[type]||'ℹ'}</span><span>${msg}</span></div>`;
+  setTimeout(()=>{ box.innerHTML=''; }, 5000);
+}
+
+/* ============================================================
+   GENERATE TABLES
+   ============================================================ */
+function generateTables(preload){
+  state.nO = Math.max(1,Math.min(8, parseInt(document.getElementById('nOrigen').value)||2));
+  state.nT = Math.max(1,Math.min(8, parseInt(document.getElementById('nTrasbordo').value)||2));
+  state.nD = Math.max(1,Math.min(8, parseInt(document.getElementById('nDestino').value)||2));
+  document.getElementById('nOrigen').value = state.nO;
+  document.getElementById('nTrasbordo').value = state.nT;
+  document.getElementById('nDestino').value = state.nD;
+
+  const {nO,nT,nD} = state;
+  let html = '';
+
+  // --- Supply & Demand ---
+  html += `<div class="card" style="margin-bottom:1.2rem">
+    <div class="card-header"><div class="card-icon">📦</div><div class="card-title">Oferta y Demanda</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div>
+        <h4 style="color:var(--green);margin-bottom:.6rem;font-size:.9rem">OFERTA — Orígenes</h4>
+        <div style="display:flex;flex-direction:column;gap:.5rem">`;
+  for(let i=0;i<nO;i++){
+    const v = preload?.supply?.[i] ?? '';
+    html+=`<div style="display:flex;align-items:center;gap:.6rem"><span class="tag tag-green" style="min-width:36px">O${i+1}</span><input type="number" id="supply_${i}" class="supply-input" min="0" value="${v}" placeholder="≥0"/></div>`;
+  }
+  html += `</div></div><div>
+        <h4 style="color:var(--red);margin-bottom:.6rem;font-size:.9rem">DEMANDA — Destinos</h4>
+        <div style="display:flex;flex-direction:column;gap:.5rem">`;
+  for(let j=0;j<nD;j++){
+    const v = preload?.demand?.[j] ?? '';
+    html+=`<div style="display:flex;align-items:center;gap:.6rem"><span class="tag tag-red" style="min-width:36px">D${j+1}</span><input type="number" id="demand_${j}" class="demand-input" min="0" value="${v}" placeholder="≥0"/></div>`;
+  }
+  html+=`</div></div></div></div>`;
+
+  // --- Costs O→T ---
+  html += buildCostTable('Costos Origen → Trasbordo','tag-green','O','tag-cyan','T','costsOT',nO,nT,preload?.costsOT);
+  // --- Costs T→T ---
+  html += buildCostTable('Costos Trasbordo → Trasbordo','tag-cyan','T','tag-cyan','T','costsTT',nT,nT,preload?.costsTT);
+  // --- Costs T→D ---
+  html += buildCostTable('Costos Trasbordo → Destino','tag-cyan','T','tag-red','D','costsTD',nT,nD,preload?.costsTD);
+  // --- Costs O→D (optional) ---
+  html += buildCostTable('Costos Origen → Destino (opcional)','tag-green','O','tag-red','D','costsOD',nO,nD,preload?.costsOD);
+
+  html += `<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem">
+    <button class="btn btn-success" onclick="solve()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Resolver
+    </button>
+    <button class="btn btn-ghost" onclick="clearAll()">Limpiar</button>
+  </div>`;
+
+  document.getElementById('tablas-contenido').innerHTML = html;
+  state.tableGenerated = true;
+
+  // Switch to datos tab
+  const tabBtn = document.querySelector('.solver-tab:nth-child(2)');
+  switchTab('datos', tabBtn);
+}
+
+function buildCostTable(title, fromClass, fromLetter, toClass, toLetter, id, rows, cols, preload){
+  let html = `<div class="card" style="margin-bottom:1.2rem">
+    <div class="card-header"><div class="card-icon">💲</div><div class="card-title">${title}</div></div>
+    <div class="table-wrap"><table><thead><tr><th></th>`;
+  for(let j=0;j<cols;j++) html+=`<th><span class="tag ${toClass}">${toLetter}${j+1}</span></th>`;
+  html+=`</tr></thead><tbody>`;
+  for(let i=0;i<rows;i++){
+    html+=`<tr><th><span class="tag ${fromClass}">${fromLetter}${i+1}</span></th>`;
+    for(let j=0;j<cols;j++){
+      const cellId=`${id}_${i}_${j}`;
+      let val='';
+      if(preload && preload[i] && preload[i][j]!==undefined){
+        val = preload[i][j]>=INF ? '∞' : preload[i][j];
+      }
+      // diagonal T→T disable self-loops
+      const extra = (id==='costsTT' && i===j) ? 'disabled style="background:var(--bg);color:var(--text3)"' : '';
+      html+=`<td><div class="inf-cell">
+        <input type="text" id="${cellId}" class="cost-input" value="${val}" placeholder="∞" ${extra} oninput="sanitizeCostInput(this)"/>
+      </div></td>`;
+    }
+    html+=`</tr>`;
+  }
+  html+=`</tbody></table></div></div>`;
+  return html;
+}
+
+function sanitizeCostInput(el){
+  const v = el.value.trim();
+  if(v==='' || v==='∞' || v==='inf' || v==='INF') return;
+  if(isNaN(Number(v))) el.value='';
+}
+
+/* ============================================================
+   READ INPUTS
+   ============================================================ */
+function readValue(id){
+  const el=document.getElementById(id);
+  if(!el) return INF;
+  const v=el.value.trim();
+  if(v===''||v==='∞'||v.toLowerCase()==='inf') return INF;
+  const n=parseFloat(v);
+  return isNaN(n)?INF:n;
+}
+
+function readCostMatrix(pfx,rows,cols){
+  const m=[];
+  for(let i=0;i<rows;i++){
+    m.push([]);
+    for(let j=0;j<cols;j++) m[i].push(readValue(`${pfx}_${i}_${j}`));
+  }
+  return m;
+}
+
+function readState(){
+  const {nO,nT,nD}=state;
+  state.supply=[]; for(let i=0;i<nO;i++) state.supply.push(readValue(`supply_${i}`));
+  state.demand=[]; for(let j=0;j<nD;j++) state.demand.push(readValue(`demand_${j}`));
+  state.costsOT = readCostMatrix('costsOT',nO,nT);
+  state.costsTT = readCostMatrix('costsTT',nT,nT);
+  state.costsTD = readCostMatrix('costsTD',nT,nD);
+  state.costsOD = readCostMatrix('costsOD',nO,nD);
+}
+
+/* ============================================================
+   VALIDATE
+   ============================================================ */
+function validate(){
+  const {nO,nT,nD,supply,demand}=state;
+  for(let i=0;i<nO;i++) if(isNaN(supply[i])||supply[i]<0||supply[i]>=INF){showAlert(`Oferta de O${i+1} es inválida.`);return false;}
+  for(let j=0;j<nD;j++) if(isNaN(demand[j])||demand[j]<0||demand[j]>=INF){showAlert(`Demanda de D${j+1} es inválida.`);return false;}
+  const totalS=supply.reduce((a,b)=>a+b,0);
+  const totalD=demand.reduce((a,b)=>a+b,0);
+  if(totalS<=0){showAlert('La oferta total debe ser mayor que cero.');return false;}
+  if(totalD<=0){showAlert('La demanda total debe ser mayor que cero.');return false;}
+  return true;
+}
+
+/* ============================================================
+   SIMPLEX LP SOLVER (Revised Simplex via Big-M)
+   ============================================================ */
+
+/** Build LP from transshipment network and solve via simplex.
+ *  Returns {flows, cost, feasible, arcs} or {feasible:false}
+ */
+function buildAndSolve(){
+  const {nO,nT,nD,supply,demand,costsOT,costsTT,costsTD,costsOD}=state;
+
+  // --- Build arc list ---
+  // Arc: {from, to, cost, index}
+  const arcs=[];
+  // O→T
+  for(let i=0;i<nO;i++) for(let t=0;t<nT;t++){
+    if(costsOT[i][t]<INF) arcs.push({from:`O${i+1}`,to:`T${t+1}`,cost:costsOT[i][t],key:`OT_${i}_${t}`});
+  }
+  // T→T
+  for(let t1=0;t1<nT;t1++) for(let t2=0;t2<nT;t2++){
+    if(t1!==t2 && costsTT[t1][t2]<INF) arcs.push({from:`T${t1+1}`,to:`T${t2+1}`,cost:costsTT[t1][t2],key:`TT_${t1}_${t2}`});
+  }
+  // T→D
+  for(let t=0;t<nT;t++) for(let j=0;j<nD;j++){
+    if(costsTD[t][j]<INF) arcs.push({from:`T${t+1}`,to:`D${j+1}`,cost:costsTD[t][j],key:`TD_${t}_${j}`});
+  }
+  // O→D (optional)
+  for(let i=0;i<nO;i++) for(let j=0;j<nD;j++){
+    if(costsOD[i][j]<INF) arcs.push({from:`O${i+1}`,to:`D${j+1}`,cost:costsOD[i][j],key:`OD_${i}_${j}`});
+  }
+
+  if(arcs.length===0) return {feasible:false,reason:'No hay arcos disponibles en la red.'};
+
+  // Nodes
+  const originNodes  = Array.from({length:nO},(_,i)=>`O${i+1}`);
+  const transhipNodes= Array.from({length:nT},(_,i)=>`T${i+1}`);
+  const destNodes    = Array.from({length:nD},(_,i)=>`D${i+1}`);
+  const allNodes     = [...originNodes,...transhipNodes,...destNodes];
+
+  // Total supply/demand
+  const totalS=supply.reduce((a,b)=>a+b,0);
+  const totalD=demand.reduce((a,b)=>a+b,0);
+
+  // Balance check
+  const imbalance = totalS - totalD;
+
+  // We'll use interior-point style: model as min-cost flow via revised simplex
+  // Variables: x[a] for each arc a, plus slack/surplus/artificial
+
+  const nVars = arcs.length;
+  // Constraints:
+  // For each origin: sum outflow = supply[i] (equality, add artificial if needed)
+  // For each transship: sum_in - sum_out = 0 (equality)
+  // For each dest: sum inflow = demand[j] (equality)
+  // If unbalanced: add dummy arc with 0 cost
+
+  // --- Handle imbalance ---
+  // Add dummy origin or dummy dest arc with 0 cost
+  let adjustedSupply = [...supply];
+  let adjustedDemand = [...demand];
+  if(imbalance>0){
+    // surplus supply → add dummy dest D_dummy
+    destNodes.push('D_dummy');
+    adjustedDemand.push(imbalance);
+    for(let i=0;i<nO;i++) arcs.push({from:`O${i+1}`,to:'D_dummy',cost:0,key:`OD_dummy_${i}`});
+    for(let t=0;t<nT;t++) arcs.push({from:`T${t+1}`,to:'D_dummy',cost:0,key:`TD_dummy_${t}`});
+  } else if(imbalance<0){
+    // excess demand → add dummy origin O_dummy
+    originNodes.push('O_dummy');
+    adjustedSupply.push(-imbalance);
+    for(let t=0;t<nT;t++) arcs.push({from:'O_dummy',to:`T${t+1}`,cost:0,key:`OT_dummy_${t}`});
+    for(let j=0;j<nD;j++) arcs.push({from:'O_dummy',to:`D${j+1}`,cost:0,key:`OD_dummy_${j}`});
+  }
+
+  const nA = arcs.length;
+  const nNodes = allNodes.length + (imbalance>0?1:0) + (imbalance<0?1:0);
+
+  // Build constraint matrix using Big-M simplex
+  // Rows: one per node (but we remove one for full rank)
+  // We'll use the following formulation:
+  //   For origins: sum_out(x) - sum_in(x) = supply
+  //   For transship: sum_in(x) - sum_out(x) = 0
+  //   For dests: sum_in(x) - sum_out(x) = demand
+  // Add artificial variables for each row, Big-M in objective
+
+  const nodeList = [
+    ...originNodes.map((n,i)=>({name:n,rhs:adjustedSupply[i]??0,type:'origin'})),
+    ...transhipNodes.map(n=>({name:n,rhs:0,type:'transship'})),
+    ...destNodes.map((n,j)=>({name:n,rhs:adjustedDemand[j]??0,type:'dest'})),
+  ];
+
+  // Filter to only nodes actually used in arcs
+  const usedNodeNames = new Set();
+  arcs.forEach(a=>{usedNodeNames.add(a.from);usedNodeNames.add(a.to);});
+  const usedNodes = nodeList.filter(n=>usedNodeNames.has(n.name));
+  const m = usedNodes.length;
+
+  // Build Ax = b
+  // For each node: net outflow = rhs
+  //   coefficient for arc a in row for node n:
+  //     +1 if arc.from == n.name (outflow)
+  //     -1 if arc.to   == n.name (inflow)
+  
+  // We'll drop the last row (linearly dependent) → (m-1) constraints
+  const rows = m-1;
+  const rhsVec = usedNodes.slice(0,rows).map(n=>n.rhs);
+
+  // Variables: x0..x_{nA-1} (flow arcs), then artificials a0..a_{rows-1}
+  const nTotal = nA + rows;
+  // Objective
+  const bigM = 1e6;
+  const c = [
+    ...arcs.map(a=>a.cost),
+    ...Array(rows).fill(bigM)
+  ];
+
+  // Constraint matrix
+  // A[i][j]: row i (node), col j (variable)
+  const A = [];
+  for(let i=0;i<rows;i++){
+    const row = new Array(nTotal).fill(0);
+    const nodeName = usedNodes[i].name;
+    for(let a=0;a<nA;a++){
+      if(arcs[a].from===nodeName) row[a] += 1;
+      if(arcs[a].to===nodeName)   row[a] -= 1;
+    }
+    row[nA+i] = 1; // artificial
+    A.push(row);
+  }
+
+  // Phase 1 & 2 combined (Big-M method)
+  // Use Gauss-Jordan based tableau simplex
+  const result = simplexSolve(A, rhsVec, c, nA, rows);
+  return {...result, arcs, nodeList, nO, nT, nD};
+}
+
+function simplexSolve(A, b, c, nArcVars, m){
+  // Tableau: m rows, (c.length+1) cols (+1 for rhs)
+  const n = c.length;
+  const T = [];
+  for(let i=0;i<m;i++){
+    T.push([...A[i], b[i]]);
+  }
+  // Objective row
+  const obj = [...c, 0];
+  T.push(obj);
+
+  const basis = [];
+  for(let i=0;i<m;i++) basis.push(nArcVars+i); // artificials in basis
+
+  const MAX_ITER = 10000;
+  for(let iter=0;iter<MAX_ITER;iter++){
+    // Find pivot column: most negative in obj row
+    const objRow = T[m];
+    let pivCol = -1; let minVal = -1e-9;
+    for(let j=0;j<n;j++){
+      if(objRow[j]<minVal){minVal=objRow[j];pivCol=j;}
+    }
+    if(pivCol===-1) break; // optimal
+
+    // Min ratio test
+    let pivRow = -1; let minRatio = Infinity;
+    for(let i=0;i<m;i++){
+      if(T[i][pivCol]>1e-9){
+        const r=T[i][n]/T[i][pivCol];
+        if(r<minRatio-1e-9){minRatio=r;pivRow=i;}
+      }
+    }
+    if(pivRow===-1) return {feasible:false,reason:'Problema no acotado.'};
+
+    // Pivot
+    const pivVal = T[pivRow][pivCol];
+    for(let j=0;j<=n;j++) T[pivRow][j]/=pivVal;
+    for(let i=0;i<=m;i++){
+      if(i===pivRow) continue;
+      const fac=T[i][pivCol];
+      if(Math.abs(fac)<1e-12) continue;
+      for(let j=0;j<=n;j++) T[i][j]-=fac*T[pivRow][j];
+    }
+    basis[pivRow]=pivCol;
+  }
+
+  // Check feasibility (artificials should be 0)
+  const bigM=1e6;
+  for(let i=0;i<m;i++){
+    if(basis[i]>=nArcVars && T[i][n]>1e-6)
+      return {feasible:false,reason:'El problema no tiene solución factible. Verifica oferta/demanda y arcos disponibles.'};
+  }
+
+  // Extract solution
+  const x = new Array(nArcVars).fill(0);
+  for(let i=0;i<m;i++){
+    if(basis[i]<nArcVars) x[basis[i]]=Math.max(0,T[i][n]);
+  }
+  const cost = T[m][n]; // Note: sign — obj row rhs is -Z for min, but we built it as +c
+  // Recompute cost directly
+  let totalCost=0;
+  for(let j=0;j<nArcVars;j++) totalCost+=c[j]*x[j];
+
+  return {feasible:true, flows:x, cost:totalCost};
+}
+
+/* ============================================================
+   SOLVE
+   ============================================================ */
+function solve(){
+  if(!state.tableGenerated){showAlert('Genera las tablas primero en la pestaña Configuración.');return;}
+  readState();
+  if(!validate()) return;
+
+  const btnSolve = document.getElementById('btnSolve');
+  if(btnSolve){ btnSolve.disabled=true; btnSolve.innerHTML='<span class="spinner"></span> Calculando…'; }
+
+  setTimeout(()=>{
+    try{
+      const result = buildAndSolve();
+      if(btnSolve){ btnSolve.disabled=false; btnSolve.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Resolver'; }
+      if(!result.feasible){
+        showAlert(result.reason||'Sin solución factible.','error');
+        return;
+      }
+      state.solution=result;
+      renderResults(result);
+      renderFormulation(result);
+      drawNetwork();
+      document.getElementById('exportBtns').style.display='flex';
+      showAlert('¡Solución óptima encontrada!','success');
+      // Switch to results tab
+      const tabBtn = document.querySelector('.solver-tab:nth-child(3)');
+      switchTab('resultado', tabBtn);
+    } catch(e){
+      if(btnSolve){ btnSolve.disabled=false; btnSolve.innerHTML='Resolver'; }
+      showAlert('Error inesperado: '+e.message,'error');
+    }
+  }, 60);
+}
+
+/* ============================================================
+   RENDER RESULTS
+   ============================================================ */
+function renderResults(result){
+  const {flows, cost, arcs, nO, nT, nD} = result;
+  const totalS = state.supply.reduce((a,b)=>a+b,0);
+  const totalD = state.demand.reduce((a,b)=>a+b,0);
+  const balanced = Math.abs(totalS-totalD)<1e-6;
+
+  let html = `<div class="result-section">
+    <div class="result-kpi">
+      <div class="kpi-card"><div class="kpi-value">$${cost.toFixed(2)}</div><div class="kpi-label">Costo Total Mínimo</div></div>
+      <div class="kpi-card"><div class="kpi-value">${flows.filter(f=>f>1e-6).length}</div><div class="kpi-label">Arcos con Flujo</div></div>
+      <div class="kpi-card"><div class="kpi-value">${arcs.length}</div><div class="kpi-label">Arcos en Red</div></div>
+      <div class="kpi-card"><div class="kpi-value"><span class="tag ${balanced?'tag-green':'tag-yellow'}">${balanced?'Balanceado':'Desbalanceado'}</span></div><div class="kpi-label">Balance</div></div>
+    </div>`;
+
+  // Flow table
+  html+=`<h3 style="font-size:1rem;color:var(--text);margin-bottom:.75rem">Flujo Óptimo por Arco</h3>
+    <div class="result-table-wrap">
+    <table><thead><tr><th>Arco</th><th>De</th><th>A</th><th>Costo Unit.</th><th>Flujo</th><th>Costo Parcial</th></tr></thead><tbody>`;
+  
+  arcs.forEach((arc,idx)=>{
+    const f = flows[idx]||0;
+    const isDummy = arc.to==='D_dummy'||arc.from==='O_dummy';
+    if(isDummy && f<1e-6) return; // hide unused dummy
+    const partial = arc.cost*f;
+    const cls = f>1e-6 ? 'highlight-row' : '';
+    html+=`<tr class="${cls}">
+      <td style="font-weight:600">${arc.from}→${arc.to}</td>
+      <td><span class="tag ${arc.from.startsWith('O')?'tag-green':arc.from.startsWith('T')?'tag-cyan':'tag-red'}">${arc.from}</span></td>
+      <td><span class="tag ${arc.to.startsWith('O')?'tag-green':arc.to.startsWith('T')?'tag-cyan':'tag-red'}">${arc.to}</span></td>
+      <td>${arc.cost>=1e8?'∞':arc.cost}</td>
+      <td class="${f>1e-6?'flow-nonzero':'flow-zero'}">${f.toFixed(2)}</td>
+      <td>${f>1e-6?'$'+partial.toFixed(2):'-'}</td>
+    </tr>`;
+  });
+  html+=`</tbody><tfoot><tr style="font-weight:700">
+    <td colspan="5" style="text-align:right;color:var(--cyan)">COSTO TOTAL:</td>
+    <td style="color:var(--cyan)">$${cost.toFixed(2)}</td>
+  </tr></tfoot></table></div>`;
+
+  // Interpretation
+  html+=`<h3 style="font-size:1rem;color:var(--text);margin:1.2rem 0 .75rem">Interpretación Textual</h3>`;
+  html+=`<div class="card" style="margin-bottom:0"><ul style="list-style:none;display:flex;flex-direction:column;gap:.5rem">`;
+  arcs.forEach((arc,idx)=>{
+    const f=flows[idx]||0;
+    if(f>1e-6 && arc.to!=='D_dummy' && arc.from!=='O_dummy'){
+      html+=`<li style="font-size:.88rem;color:var(--text2);padding-left:1rem;border-left:2px solid var(--cyan)">Enviar <strong style="color:var(--text)">${f.toFixed(0)} unidades</strong> desde <strong style="color:var(--text)">${arc.from}</strong> hasta <strong style="color:var(--text)">${arc.to}</strong> al costo de $${(arc.cost*f).toFixed(2)}.</li>`;
+    }
+  });
+  html+=`</ul></div></div>`;
+
+  document.getElementById('resultContent').innerHTML = html;
+}
+
+/* ============================================================
+   RENDER FORMULATION
+   ============================================================ */
+function renderFormulation(result){
+  const {arcs, flows, cost, nO, nT, nD} = result;
+  const {supply, demand} = state;
+
+  let lines = [];
+
+  lines.push('╔══════════════════════════════════════════════════════╗');
+  lines.push('║        FORMULACIÓN MATEMÁTICA — MÉTODO DE TRASBORDO ║');
+  lines.push('╚══════════════════════════════════════════════════════╝');
+  lines.push('');
+  lines.push('VARIABLES DE DECISIÓN:');
+  arcs.forEach(a=>{ if(a.to!=='D_dummy'&&a.from!=='O_dummy') lines.push(`  x(${a.from},${a.to}) = flujo de ${a.from} a ${a.to}  [unidades]`); });
+  lines.push('');
+  lines.push('FUNCIÓN OBJETIVO (Minimizar costo total):');
+  let objParts=[];
+  arcs.forEach(a=>{ if(a.to!=='D_dummy'&&a.from!=='O_dummy'&&a.cost<1e8) objParts.push(`${a.cost}·x(${a.from},${a.to})`); });
+  lines.push('  min Z = '+objParts.join(' + '));
+  lines.push('');
+  lines.push('RESTRICCIONES DE OFERTA (flujo saliente ≤ supply):');
+  for(let i=0;i<nO;i++){
+    const outArcs=arcs.filter(a=>a.from===`O${i+1}`&&a.to!=='D_dummy');
+    if(outArcs.length) lines.push(`  ${outArcs.map(a=>`x(O${i+1},${a.to})`).join(' + ')} ≤ ${supply[i]}   [O${i+1}]`);
+  }
+  lines.push('');
+  lines.push('RESTRICCIONES DE TRASBORDO (conservación de flujo):');
+  for(let t=0;t<nT;t++){
+    const inA=arcs.filter(a=>a.to===`T${t+1}`);
+    const outA=arcs.filter(a=>a.from===`T${t+1}`&&a.to!=='D_dummy');
+    if(inA.length||outA.length){
+      const ins=inA.map(a=>`x(${a.from},T${t+1})`).join(' + ')||'0';
+      const outs=outA.map(a=>`x(T${t+1},${a.to})`).join(' + ')||'0';
+      lines.push(`  ${ins} = ${outs}   [T${t+1}]`);
+    }
+  }
+  lines.push('');
+  lines.push('RESTRICCIONES DE DEMANDA (flujo entrante ≥ demand):');
+  for(let j=0;j<nD;j++){
+    const inA=arcs.filter(a=>a.to===`D${j+1}`);
+    if(inA.length) lines.push(`  ${inA.map(a=>`x(${a.from},D${j+1})`).join(' + ')} ≥ ${demand[j]}   [D${j+1}]`);
+  }
+  lines.push('');
+  lines.push('NO NEGATIVIDAD:');
+  lines.push('  x(i,j) ≥ 0  para todo arco (i,j)');
+  lines.push('');
+  lines.push('══════════════════════════════════════════════════════');
+  lines.push('SOLUCIÓN ÓPTIMA:');
+  arcs.forEach((a,idx)=>{
+    const f=flows[idx]||0;
+    if(f>1e-6&&a.to!=='D_dummy'&&a.from!=='O_dummy')
+      lines.push(`  x(${a.from},${a.to}) = ${f.toFixed(2)}`);
+  });
+  lines.push('');
+  lines.push(`  Z* = $${cost.toFixed(2)}  (Costo Total Mínimo)`);
+  lines.push('══════════════════════════════════════════════════════');
+
+  document.getElementById('formContent').innerHTML = `
+    <h3 style="font-size:1rem;color:var(--text);margin-bottom:.75rem">Modelo de Programación Lineal</h3>
+    <div class="math-block">${lines.join('\n')}</div>`;
+}
+
+/* ============================================================
+   DRAW NETWORK
+   ============================================================ */
+function drawNetwork(){
+  const canvas = document.getElementById('networkCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const isLight = document.body.classList.contains('light-mode');
+  const bgColor = isLight?'#f0f4ff':'#0d1428';
+  const textColor = isLight?'#0d1428':'#e8f0fe';
+  const subColor = isLight?'#3a5070':'#8bacd8';
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0,0,W,H);
+
+  const {arcs, flows, nO, nT, nD} = state.solution;
+  const {supply, demand} = state;
+
+  // Positions
+  const nodes = {};
+  const R = 28;
+  const colO = 90, colT = 350, colD = 610;
+
+  // Layer heights
+  const layerH = (n, col) => {
+    const spacing = Math.min(100, (H-80)/(n+1));
+    return Array.from({length:n},(_,i)=>({x:col,y:80+(i+1)*spacing}));
+  };
+
+  const oPos = layerH(nO, colO);
+  const tPos = layerH(nT, colT);
+  const dPos = layerH(nD, colD);
+
+  for(let i=0;i<nO;i++) nodes[`O${i+1}`]={...oPos[i],color:'#00e676',label:`O${i+1}`,sub:`s=${supply[i]}`};
+  for(let t=0;t<nT;t++) nodes[`T${t+1}`]={...tPos[t],color:'#00d4ff',label:`T${t+1}`,sub:'trasbordo'};
+  for(let j=0;j<nD;j++) nodes[`D${j+1}`]={...dPos[j],color:'#ff4d6a',label:`D${j+1}`,sub:`d=${demand[j]}`};
+
+  // Draw column labels
+  ctx.font='bold 13px Segoe UI,sans-serif';
+  ctx.fillStyle = subColor;
+  ctx.textAlign='center';
+  ctx.fillText('ORÍGENES', colO, 30);
+  ctx.fillText('TRASBORDO', colT, 30);
+  ctx.fillText('DESTINOS', colD, 30);
+
+  // Draw arcs
+  arcs.forEach((arc,idx)=>{
+    const f = flows[idx]||0;
+    const from = nodes[arc.from];
+    const to   = nodes[arc.to];
+    if(!from||!to) return;
+    const active = f>1e-6;
+
+    // Arrow
+    const dx=to.x-from.x, dy=to.y-from.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const nx=dx/dist, ny=dy/dist;
+    const sx=from.x+nx*R, sy=from.y+ny*R;
+    const ex=to.x-nx*R,   ey=to.y-ny*R;
+
+    ctx.beginPath();
+    ctx.moveTo(sx,sy);
+    ctx.lineTo(ex,ey);
+    ctx.strokeStyle = active ? (isLight?'#007baa':'#00d4ff') : (isLight?'#c3d2f0':'#1e2f55');
+    ctx.lineWidth = active ? 2.5 : 1.2;
+    ctx.setLineDash(active?[]:[5,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrowhead
+    const angle=Math.atan2(ey-sy,ex-sx);
+    const al=10,aw=0.38;
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-al*Math.cos(angle-aw),ey-al*Math.sin(angle-aw));
+    ctx.lineTo(ex-al*Math.cos(angle+aw),ey-al*Math.sin(angle+aw));
+    ctx.closePath();
+    ctx.fillStyle = active?(isLight?'#007baa':'#00d4ff'):(isLight?'#b0c4e8':'#1e2f55');
+    ctx.fill();
+
+    // Label on arc
+    const mx=(sx+ex)/2, my=(sy+ey)/2;
+    const bg = active?(isLight?'rgba(0,123,170,.13)':'rgba(0,212,255,.13)'):(isLight?'rgba(200,210,230,.5)':'rgba(13,20,40,.7)');
+    const labelText = active ? `c=${arc.cost} | f=${f.toFixed(0)}` : `c=${arc.cost}`;
+    ctx.font=`${active?'bold ':''}11px Segoe UI,sans-serif`;
+    const tw=ctx.measureText(labelText).width;
+    ctx.fillStyle=bg;
+    ctx.beginPath();ctx.roundRect(mx-tw/2-4,my-9,tw+8,17,4);ctx.fill();
+    ctx.fillStyle=active?(isLight?'#005f88':'#00d4ff'):(isLight?'#556b8e':'#556b8e');
+    ctx.textAlign='center';
+    ctx.fillText(labelText,mx,my+4);
+  });
+
+  // Draw nodes
+  Object.values(nodes).forEach(n=>{
+    // Shadow glow
+    ctx.beginPath();
+    ctx.arc(n.x,n.y,R+6,0,Math.PI*2);
+    const grad=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,R+6);
+    grad.addColorStop(0,n.color+'44');
+    grad.addColorStop(1,n.color+'00');
+    ctx.fillStyle=grad;
+    ctx.fill();
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(n.x,n.y,R,0,Math.PI*2);
+    ctx.fillStyle=n.color+'22';
+    ctx.fill();
+    ctx.strokeStyle=n.color;
+    ctx.lineWidth=2.5;
+    ctx.stroke();
+
+    // Label
+    ctx.font='bold 13px Segoe UI,sans-serif';
+    ctx.fillStyle=textColor;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(n.label,n.x,n.y);
+    ctx.font='10px Segoe UI,sans-serif';
+    ctx.fillStyle=subColor;
+    ctx.fillText(n.sub,n.x,n.y+R+13);
+    ctx.textBaseline='alphabetic';
+  });
+}
+
+/* ============================================================
+   LOAD EXAMPLE
+   ============================================================ */
+function loadExample(){
+  // 2 origins, 2 transship, 2 destinations
+  document.getElementById('nOrigen').value=2;
+  document.getElementById('nTrasbordo').value=2;
+  document.getElementById('nDestino').value=2;
+
+  const preload = {
+    supply:[200,300],
+    demand:[250,250],
+    costsOT:[[2,3],[5,1]],
+    costsTT:[[0,2],[INF,0]],
+    costsTD:[[3,5],[4,2]],
+    costsOD:[[INF,INF],[INF,INF]]
+  };
+  generateTables(preload);
+  showAlert('Ejemplo cargado: 2 orígenes, 2 trasbordos, 2 destinos.','info');
+}
+
+/* ============================================================
+   CLEAR
+   ============================================================ */
+function clearAll(){
+  state.solution=null;state.tableGenerated=false;
+  document.getElementById('tablas-contenido').innerHTML='<p style="color:var(--text3);text-align:center;padding:2rem 0">Genera las tablas primero en la pestaña Configuración.</p>';
+  document.getElementById('resultContent').innerHTML='<p style="color:var(--text3);text-align:center;padding:2rem 0">Resuelve el problema primero.</p>';
+  document.getElementById('formContent').innerHTML='<p style="color:var(--text3);text-align:center;padding:2rem 0">Resuelve el problema para ver la formulación matemática.</p>';
+  document.getElementById('alertBox').innerHTML='';
+  document.getElementById('exportBtns').style.display='none';
+  const ctx=document.getElementById('networkCanvas').getContext('2d');
+  ctx.clearRect(0,0,800,440);
+  const tabBtn=document.querySelector('.solver-tab');
+  switchTab('config',tabBtn);
+}
+
+/* ============================================================
+   EXPORT PDF (print-based)
+   ============================================================ */
+function exportPDF(){
+  if(!state.solution){showAlert('Resuelve primero para exportar.','warn');return;}
+  const {arcs,flows,cost}=state.solution;
+  const {supply,demand}=state;
+  
+  let rows='';
+  arcs.forEach((a,idx)=>{
+    const f=flows[idx]||0;
+    if(a.to==='D_dummy'||a.from==='O_dummy') return;
+    rows+=`<tr style="background:${f>1e-6?'#e6f7ff':'#fff'}">
+      <td>${a.from}→${a.to}</td><td>${a.cost}</td>
+      <td style="color:${f>1e-6?'#0070a8':'#999'};font-weight:${f>1e-6?700:400}">${f.toFixed(2)}</td>
+      <td>$${(a.cost*f).toFixed(2)}</td></tr>`;
+  });
+
+  const w=window.open('','_blank','width=800,height=600');
+  w.document.write(`<!DOCTYPE html><html><head><title>Resultado Trasbordo</title>
+  <style>body{font-family:Segoe UI,sans-serif;padding:2rem;color:#111}
+  h1{color:#005f88;border-bottom:2px solid #00d4ff;padding-bottom:.5rem}
+  h2{color:#0070a8;font-size:1rem;margin-top:1.5rem}
+  table{border-collapse:collapse;width:100%;margin-top:.5rem}
+  th{background:#e6f7ff;color:#005f88;padding:.5rem .75rem;text-align:center;border:1px solid #c0dff0}
+  td{padding:.45rem .75rem;text-align:center;border:1px solid #ddd;font-size:.9rem}
+  .cost{font-size:1.4rem;color:#005f88;font-weight:700}
+  .badge{display:inline-block;padding:.2rem .6rem;border-radius:4px;font-size:.8rem;font-weight:600}
+  </style></head><body>
+  <h1>Método de Trasbordo — Resultado Óptimo</h1>
+  <div style="display:flex;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap">
+    <div><div class="cost">$${cost.toFixed(2)}</div><div style="color:#555;font-size:.8rem">Costo Total Mínimo</div></div>
+    <div><div class="cost">${flows.filter(f=>f>1e-6).length}</div><div style="color:#555;font-size:.8rem">Arcos activos</div></div>
+  </div>
+  <h2>Flujo Óptimo</h2>
+  <table><thead><tr><th>Arco</th><th>Costo Unit.</th><th>Flujo</th><th>Costo Parcial</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr style="font-weight:700;background:#e6f7ff"><td colspan="3" style="text-align:right">TOTAL:</td><td>$${cost.toFixed(2)}</td></tr></tfoot>
+  </table>
+  <p style="margin-top:2rem;font-size:.8rem;color:#888">Generado por TransShip Solver</p>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),400);
+}
+
+/* ============================================================
+   EXPORT EXCEL (CSV)
+   ============================================================ */
+function exportExcel(){
+  if(!state.solution){showAlert('Resuelve primero para exportar.','warn');return;}
+  const {arcs,flows,cost}=state.solution;
+  let csv='Arco,De,A,Costo Unitario,Flujo,Costo Parcial\n';
+  arcs.forEach((a,idx)=>{
+    const f=flows[idx]||0;
+    if(a.to==='D_dummy'||a.from==='O_dummy') return;
+    csv+=`"${a.from}→${a.to}","${a.from}","${a.to}",${a.cost>=1e8?'INF':a.cost},${f.toFixed(2)},${(a.cost*f).toFixed(2)}\n`;
+  });
+  csv+=`,,,,TOTAL,$${cost.toFixed(2)}\n`;
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='trasbordo_resultado.csv';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showAlert('Archivo CSV exportado correctamente.','success');
+}
+</script>
+</body>
+</html>

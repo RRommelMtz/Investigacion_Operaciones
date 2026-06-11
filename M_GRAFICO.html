@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método Gráfico — Investigación de Operaciones</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080d18;
+  --panel: #0f1622;
+  --card: #151e2e;
+  --border: #1e2d44;
+  --text: #c8d8ef;
+  --muted: #4e6580;
+  --accent: #3d8ef0;
+  --green: #34d399;
+  --gold: #fbbf24;
+  --red: #f87171;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; }
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+header {
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  padding: 11px 18px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+header h1 { font-family: 'DM Serif Display', serif; font-size: 17px; font-weight: 400; color: #e8f0ff; }
+header .tag {
+  background: var(--accent); color: #000; padding: 2px 7px;
+  border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: .07em;
+}
+header .sub { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 290px; flex-shrink: 0; background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto;
+  padding: 14px 12px; gap: 13px;
+}
+.slabel {
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: 7px;
+}
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 11px; }
+
+.obj-type { display: flex; gap: 5px; margin-bottom: 9px; }
+.obj-type button {
+  flex: 1; padding: 5px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--muted); cursor: pointer; font: 12px 'DM Sans', sans-serif; transition: .15s;
+}
+.obj-type button.on { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.obj-row { display: grid; grid-template-columns: 26px 1fr 22px 1fr 12px; align-items: center; gap: 5px; }
+.mono { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--green); white-space: nowrap; }
+.mlbl { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; }
+
+input[type=number] {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); padding: 5px 7px; font: 13px 'DM Mono', monospace;
+  width: 100%; transition: border .15s; -moz-appearance: textfield;
+}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+.clist { display: flex; flex-direction: column; gap: 5px; }
+.crow {
+  display: grid;
+  grid-template-columns: 4px 46px 14px 46px 14px 42px 46px 20px;
+  align-items: center; gap: 4px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; border-left: 3px solid var(--accent);
+  padding: 5px 5px 5px 3px;
+}
+select.csign {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  border-radius: 5px; padding: 5px 0; font: 13px 'DM Mono', monospace;
+  cursor: pointer; text-align: center; -webkit-appearance: none;
+}
+.rmv {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 15px; line-height: 1; border-radius: 4px; transition: color .15s; padding: 1px;
+}
+.rmv:hover { color: var(--red); }
+.addbtn {
+  width: 100%; padding: 6px; background: none;
+  border: 1px dashed var(--border); border-radius: 6px; color: var(--muted);
+  cursor: pointer; font: 12px 'DM Sans', sans-serif; margin-top: 4px; transition: .15s;
+}
+.addbtn:hover { border-color: var(--accent); color: var(--accent); }
+
+.opt-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; }
+
+.solvebtn {
+  width: 100%; padding: 10px; background: var(--accent); border: none;
+  border-radius: 8px; color: #000; font: 600 13px 'DM Sans', sans-serif;
+  cursor: pointer; transition: .15s;
+}
+.solvebtn:hover { background: #62a8ff; }
+.solvebtn:active { transform: scale(.98); }
+
+.errmsg {
+  color: var(--red); font-size: 12px; padding: 7px;
+  background: rgba(248,113,113,.08); border-radius: 6px; display: none;
+}
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.cwrap { flex: 1; position: relative; overflow: hidden; }
+canvas { display: block; width: 100%; height: 100%; }
+
+.legend {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(8,13,24,.9); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; display: none;
+  backdrop-filter: blur(6px);
+}
+.litem { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 11px; }
+.litem:last-child { margin-bottom: 0; }
+
+.results {
+  background: var(--panel); border-top: 1px solid var(--border);
+  flex-shrink: 0; height: 195px; overflow-y: auto; padding: 12px 18px;
+}
+.res-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px; }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; height: 100%; }
+.res-title { font-family: 'DM Serif Display', serif; font-size: 14px; margin-bottom: 7px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th {
+  text-align: left; color: var(--muted); font-weight: 500;
+  padding: 3px 8px; border-bottom: 1px solid var(--border); font-size: 11px;
+}
+td { padding: 3px 8px; font-family: 'DM Mono', monospace; }
+tr.optr td { color: var(--gold); }
+tr.optr { background: rgba(251,191,36,.05); }
+
+.opt-box {
+  background: rgba(251,191,36,.05); border: 1px solid rgba(251,191,36,.2);
+  border-radius: 8px; padding: 14px;
+}
+.opt-type { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
+.opt-val { font-family: 'DM Mono', monospace; font-size: 24px; color: var(--gold); font-weight: 500; }
+.opt-pt { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <h1>Método Gráfico</h1>
+  <span class="tag">I.O.</span>
+  <span class="sub">Programación Lineal — 2 Variables</span>
+</header>
+
+<div class="body">
+  <aside class="sidebar">
+
+    <!-- Función objetivo -->
+    <div>
+      <div class="slabel">Función Objetivo</div>
+      <div class="card">
+        <div class="obj-type">
+          <button id="btnMax" class="on" onclick="setType('max')">▲ Maximizar</button>
+          <button id="btnMin" onclick="setType('min')">▼ Minimizar</button>
+        </div>
+        <div class="obj-row">
+          <span class="mono">Z =</span>
+          <input type="number" id="oa" value="5" step="any" placeholder="coef x">
+          <span class="mlbl">x +</span>
+          <input type="number" id="ob" value="4" step="any" placeholder="coef y">
+          <span class="mlbl">y</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restricciones -->
+    <div>
+      <div class="slabel">Restricciones</div>
+      <div class="card">
+        <div class="clist" id="clist"></div>
+        <button class="addbtn" onclick="addCon()">+ Agregar restricción</button>
+      </div>
+    </div>
+
+    <!-- Opciones -->
+    <div>
+      <div class="slabel">Opciones</div>
+      <div class="card">
+        <label class="opt-row">
+          <input type="checkbox" id="nonNeg" checked>
+          No negatividad (x ≥ 0, y ≥ 0)
+        </label>
+      </div>
+    </div>
+
+    <div class="errmsg" id="errmsg"></div>
+    <button class="solvebtn" onclick="solve()">Resolver →</button>
+  </aside>
+
+  <div class="main">
+    <div class="cwrap" id="cwrap">
+      <canvas id="cv"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="results" id="results">
+      <div class="res-empty">Ingresa los datos y presiona <b>Resolver</b> para ver la solución.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ===================
+// ESTADO
+// ===================
+let objType = 'max';
+let uid = 0;
+const COLORS = ['#3d8ef0','#34d399','#fb923c','#a78bfa','#f87171','#38bdf8','#f472b6'];
+let cons = [
+  { id: uid++, a:6, b:4, c:24, sign:'<=' },
+  { id: uid++, a:1, b:2, c:6,  sign:'<=' },
+];
+
+// ===================
+// UI
+// ===================
+function setType(t) {
+  objType = t;
+  document.getElementById('btnMax').classList.toggle('on', t === 'max');
+  document.getElementById('btnMin').classList.toggle('on', t === 'min');
+}
+
+function addCon() {
+  cons.push({ id: uid++, a:1, b:1, c:10, sign:'<=' });
+  renderCons();
+}
+
+function removeCon(id) {
+  cons = cons.filter(c => c.id !== id);
+  renderCons();
+}
+
+function upd(id, field, val) {
+  const c = cons.find(c => c.id === id);
+  if (!c) return;
+  c[field] = field === 'sign' ? val : (parseFloat(val) || 0);
+}
+
+function renderCons() {
+  const list = document.getElementById('clist');
+  list.innerHTML = '';
+  cons.forEach((c, i) => {
+    const col = COLORS[i % COLORS.length];
+    const d = document.createElement('div');
+    d.className = 'crow';
+    d.style.borderLeftColor = col;
+    d.innerHTML =
+      `<span></span>` +
+      `<input type="number" value="${c.a}" step="any" oninput="upd(${c.id},'a',this.value)" style="min-width:0">` +
+      `<span class="mlbl">x +</span>` +
+      `<input type="number" value="${c.b}" step="any" oninput="upd(${c.id},'b',this.value)" style="min-width:0">` +
+      `<span class="mlbl">y</span>` +
+      `<select class="csign" onchange="upd(${c.id},'sign',this.value)">` +
+        `<option value="<=" ${c.sign==='<='?'selected':''}>≤</option>` +
+        `<option value=">=" ${c.sign==='>='?'selected':''}>≥</option>` +
+        `<option value="=" ${c.sign==='='?'selected':''}>=</option>` +
+      `</select>` +
+      `<input type="number" value="${c.c}" step="any" oninput="upd(${c.id},'c',this.value)" style="min-width:0">` +
+      `<button class="rmv" onclick="removeCon(${c.id})">×</button>`;
+    list.appendChild(d);
+  });
+}
+
+// ===================
+// ALGORITMO
+// ===================
+function intersect(l1, l2) {
+  const det = l1.a*l2.b - l2.a*l1.b;
+  if (Math.abs(det) < 1e-10) return null;
+  return {
+    x: (l1.c*l2.b - l2.c*l1.b) / det,
+    y: (l1.a*l2.c - l2.a*l1.c) / det,
+  };
+}
+
+function satisfies(pt, con, eps=1e-7) {
+  const v = con.a*pt.x + con.b*pt.y;
+  if (con.sign === '<=') return v <= con.c + eps;
+  if (con.sign === '>=') return v >= con.c - eps;
+  return Math.abs(v - con.c) <= eps;
+}
+
+function dedupe(pts, eps=1e-7) {
+  return pts.filter((p,i) => !pts.slice(0,i).some(q => Math.abs(q.x-p.x)<eps && Math.abs(q.y-p.y)<eps));
+}
+
+function convexSort(pts) {
+  if (pts.length < 3) return [...pts];
+  const cx = pts.reduce((s,p) => s+p.x, 0)/pts.length;
+  const cy = pts.reduce((s,p) => s+p.y, 0)/pts.length;
+  return [...pts].sort((a,b) =>
+    Math.atan2(a.y-cy, a.x-cx) - Math.atan2(b.y-cy, b.x-cx)
+  );
+}
+
+function findVertices(allCons) {
+  const n = allCons.length;
+  const pts = [];
+  for (let i=0; i<n; i++) {
+    for (let j=i+1; j<n; j++) {
+      const p = intersect(allCons[i], allCons[j]);
+      if (!p || !isFinite(p.x) || !isFinite(p.y)) continue;
+      if (Math.abs(p.x) > 1e5 || Math.abs(p.y) > 1e5) continue;
+      p.x = Math.abs(p.x) < 1e-8 ? 0 : p.x;
+      p.y = Math.abs(p.y) < 1e-8 ? 0 : p.y;
+      if (allCons.every(c => satisfies(p, c))) pts.push({ x: p.x, y: p.y });
+    }
+  }
+  return dedupe(pts);
+}
+
+// ===================
+// SOLVE
+// ===================
+function solve() {
+  const errEl = document.getElementById('errmsg');
+  errEl.style.display = 'none';
+
+  const oa = parseFloat(document.getElementById('oa').value);
+  const ob = parseFloat(document.getElementById('ob').value);
+  if (isNaN(oa) || isNaN(ob)) { showErr('Ingresa los coeficientes de la función objetivo.'); return; }
+  if (cons.length === 0) { showErr('Agrega al menos una restricción.'); return; }
+
+  const nonNeg = document.getElementById('nonNeg').checked;
+  const allCons = [...cons];
+  if (nonNeg) {
+    allCons.push({ a:1, b:0, c:0, sign:'>=' });
+    allCons.push({ a:0, b:1, c:0, sign:'>=' });
+  }
+
+  const verts = findVertices(allCons);
+  if (verts.length === 0) {
+    showErr('No se encontró región factible. Revisa las restricciones.');
+    clearCanvas();
+    document.getElementById('results').innerHTML = '<div class="res-empty">Sin región factible.</div>';
+    return;
+  }
+
+  const evaled = verts.map(v => ({ ...v, z: oa*v.x + ob*v.y }));
+  const opt = objType === 'max'
+    ? evaled.reduce((b,v) => v.z > b.z ? v : b, evaled[0])
+    : evaled.reduce((b,v) => v.z < b.z ? v : b, evaled[0]);
+
+  drawGraph(verts, opt, oa, ob);
+  renderResults(evaled, opt, oa, ob);
+}
+
+function showErr(msg) {
+  const el = document.getElementById('errmsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ===================
+// CANVAS
+// ===================
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function clearCanvas() {
+  const cv = document.getElementById('cv');
+  const wrap = document.getElementById('cwrap');
+  cv.width = wrap.offsetWidth;
+  cv.height = wrap.offsetHeight;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#080d18';
+  ctx.fillRect(0,0,cv.width,cv.height);
+  document.getElementById('legend').style.display = 'none';
+}
+
+function drawGraph(verts, opt, oa, ob) {
+  const cv = document.getElementById('cv');
+  const wrap = document.getElementById('cwrap');
+  cv.width = wrap.offsetWidth;
+  cv.height = wrap.offsetHeight;
+  const W = cv.width, H = cv.height;
+  const ctx = cv.getContext('2d');
+
+  // BOUNDS
+  const PAD = { t:40, r:45, b:56, l:62 };
+  let xMx = 1, yMx = 1;
+  verts.forEach(v => { xMx = Math.max(xMx, v.x); yMx = Math.max(yMx, v.y); });
+  xMx = niceMax(xMx * 1.4);
+  yMx = niceMax(yMx * 1.4);
+  const gW = W - PAD.l - PAD.r;
+  const gH = H - PAD.t - PAD.b;
+
+  function tx(x) { return PAD.l + (x/xMx)*gW; }
+  function ty(y) { return H - PAD.b - (y/yMx)*gH; }
+
+  // BACKGROUND
+  ctx.fillStyle = '#080d18';
+  ctx.fillRect(0,0,W,H);
+
+  // GRID
+  const xStep = niceStep(xMx);
+  const yStep = niceStep(yMx);
+  ctx.strokeStyle = '#111b2a';
+  ctx.lineWidth = 1;
+  for (let i=0; i*xStep <= xMx+1e-9; i++) {
+    const x = i*xStep;
+    ctx.beginPath(); ctx.moveTo(tx(x),PAD.t); ctx.lineTo(tx(x),H-PAD.b); ctx.stroke();
+  }
+  for (let i=0; i*yStep <= yMx+1e-9; i++) {
+    const y = i*yStep;
+    ctx.beginPath(); ctx.moveTo(PAD.l,ty(y)); ctx.lineTo(W-PAD.r,ty(y)); ctx.stroke();
+  }
+
+  // FEASIBLE REGION
+  const sorted = convexSort(verts);
+  if (sorted.length >= 3) {
+    ctx.beginPath();
+    ctx.moveTo(tx(sorted[0].x), ty(sorted[0].y));
+    for (let i=1; i<sorted.length; i++) ctx.lineTo(tx(sorted[i].x), ty(sorted[i].y));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(61,142,240,0.09)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(61,142,240,0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // CONSTRAINT LINES
+  cons.forEach((con, i) => {
+    const col = COLORS[i % COLORS.length];
+    const pts = clipLine(con.a, con.b, con.c, 0, xMx, 0, yMx);
+    if (!pts) return;
+    ctx.beginPath();
+    ctx.moveTo(tx(pts[0].x), ty(pts[0].y));
+    ctx.lineTo(tx(pts[1].x), ty(pts[1].y));
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([9,5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // ISOPROFIT LINE at optimal Z
+  if (opt) {
+    const Z = oa*opt.x + ob*opt.y;
+    const ipts = clipLine(oa, ob, Z, 0, xMx, 0, yMx);
+    if (ipts) {
+      ctx.beginPath();
+      ctx.moveTo(tx(ipts[0].x), ty(ipts[0].y));
+      ctx.lineTo(tx(ipts[1].x), ty(ipts[1].y));
+      ctx.strokeStyle = 'rgba(251,191,36,0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5,7]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // AXES
+  ctx.strokeStyle = '#253548';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD.l, H-PAD.b); ctx.lineTo(W-PAD.r+8, H-PAD.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l, H-PAD.b); ctx.lineTo(PAD.l, PAD.t-8); ctx.stroke();
+
+  // Arrowheads
+  ctx.fillStyle = '#253548';
+  ctx.beginPath(); ctx.moveTo(W-PAD.r+9,H-PAD.b); ctx.lineTo(W-PAD.r+3,H-PAD.b-4); ctx.lineTo(W-PAD.r+3,H-PAD.b+4); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t-9); ctx.lineTo(PAD.l-4,PAD.t-3); ctx.lineTo(PAD.l+4,PAD.t-3); ctx.fill();
+
+  // Axis labels
+  ctx.fillStyle = '#4e6580';
+  ctx.font = '13px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('x', W-PAD.r+18, H-PAD.b+5);
+  ctx.fillText('y', PAD.l, PAD.t-15);
+
+  // Tick marks & numbers
+  ctx.font = '10px DM Mono, monospace';
+  ctx.fillStyle = '#3a5570';
+  for (let i=0; i*xStep <= xMx+1e-9; i++) {
+    const x = i*xStep, px = tx(x);
+    ctx.strokeStyle = '#253548'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px,H-PAD.b-3); ctx.lineTo(px,H-PAD.b+3); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText(fmtN(x), px, H-PAD.b+15);
+  }
+  for (let i=0; i*yStep <= yMx+1e-9; i++) {
+    const y = i*yStep;
+    if (y === 0) continue;
+    const py = ty(y);
+    ctx.strokeStyle = '#253548'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.l-3,py); ctx.lineTo(PAD.l+3,py); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(fmtN(y), PAD.l-7, py+3);
+  }
+  ctx.textAlign = 'right'; ctx.fillStyle = '#3a5570';
+  ctx.fillText('0', PAD.l-7, H-PAD.b+4);
+
+  // VERTEX POINTS
+  sorted.forEach((v, i) => {
+    const isOpt = Math.abs(v.x-opt.x)<1e-7 && Math.abs(v.y-opt.y)<1e-7;
+    const px = tx(v.x), py = ty(v.y);
+    const letter = LETTERS[i] || String(i);
+    const label = `${letter}(${fmtN(v.x)}, ${fmtN(v.y)})`;
+
+    if (isOpt) {
+      // Glow
+      const g = ctx.createRadialGradient(px,py,0,px,py,24);
+      g.addColorStop(0,'rgba(251,191,36,.3)');
+      g.addColorStop(1,'rgba(251,191,36,0)');
+      ctx.beginPath(); ctx.arc(px,py,24,0,Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+
+      ctx.beginPath(); ctx.arc(px,py,7,0,Math.PI*2);
+      ctx.fillStyle='#fbbf24'; ctx.fill();
+      ctx.strokeStyle='#080d18'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#fbbf24'; ctx.font='bold 11px DM Mono,monospace';
+    } else {
+      ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2);
+      ctx.fillStyle='#3d8ef0'; ctx.fill();
+      ctx.strokeStyle='#080d18'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.fillStyle='#b8ccec'; ctx.font='11px DM Mono,monospace';
+    }
+
+    // Smart label placement
+    ctx.font = isOpt ? 'bold 11px DM Mono,monospace' : '11px DM Mono,monospace';
+    const mw = ctx.measureText(label).width;
+    let lx = px+10, ly = py-10;
+    if (lx + mw > W-8) lx = px - mw - 10;
+    if (ly < 18) ly = py + 20;
+    if (ly > H-8) ly = py - 10;
+
+    ctx.fillStyle = 'rgba(8,13,24,.82)';
+    ctx.fillRect(lx-3, ly-12, mw+6, 16);
+    ctx.fillStyle = isOpt ? '#fbbf24' : '#b8ccec';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, lx, ly);
+  });
+
+  // LEGEND
+  buildLegend(oa, ob, opt);
+}
+
+function buildLegend(oa, ob, opt) {
+  const leg = document.getElementById('legend');
+  leg.style.display = 'block';
+  leg.innerHTML = '';
+
+  cons.forEach((c, i) => {
+    const col = COLORS[i % COLORS.length];
+    const sign = c.sign === '<=' ? '≤' : c.sign === '>=' ? '≥' : '=';
+    const d = document.createElement('div');
+    d.className = 'litem';
+    d.innerHTML =
+      `<div style="width:18px;height:0;border-top:2px dashed ${col};flex-shrink:0"></div>` +
+      `<span style="color:${col};font-family:'DM Mono',monospace;font-size:11px">${fmtEq(c.a,c.b,c.c,sign)}</span>`;
+    leg.appendChild(d);
+  });
+
+  if (opt) {
+    const Z = oa*opt.x + ob*opt.y;
+    const d = document.createElement('div');
+    d.className = 'litem';
+    d.innerHTML =
+      `<div style="width:18px;height:0;border-top:2px dashed rgba(251,191,36,.7);flex-shrink:0"></div>` +
+      `<span style="color:#fbbf24;font-family:'DM Mono',monospace;font-size:11px">Z = ${fmtN(Z)} (isocosto)</span>`;
+    leg.appendChild(d);
+  }
+
+  const rf = document.createElement('div');
+  rf.className = 'litem';
+  rf.innerHTML =
+    `<div style="width:14px;height:10px;background:rgba(61,142,240,.12);border:1px solid rgba(61,142,240,.3);border-radius:2px;flex-shrink:0"></div>` +
+    `<span style="color:#4e6580;font-size:11px">Región factible</span>`;
+  leg.appendChild(rf);
+
+  const gd = document.createElement('div');
+  gd.className = 'litem';
+  gd.innerHTML =
+    `<div style="width:8px;height:8px;border-radius:50%;background:#fbbf24;flex-shrink:0"></div>` +
+    `<span style="color:#fbbf24;font-size:11px">Punto óptimo</span>`;
+  leg.appendChild(gd);
+}
+
+// ===================
+// RESULTADOS
+// ===================
+function renderResults(evaled, opt, oa, ob) {
+  const el = document.getElementById('results');
+  const sorted = convexSort(evaled);
+  const typeStr = objType === 'max' ? 'Maximización' : 'Minimización';
+
+  let html = '<div class="res-grid">';
+
+  // Tabla de vértices
+  html += `
+    <div>
+      <div class="res-title">Vértices de la Región Factible</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Punto</th><th>x</th><th>y</th><th>Z = ${fmtEq(oa,ob,null,null)}</th>
+          </tr>
+        </thead><tbody>`;
+
+  sorted.forEach((v, i) => {
+    const isOpt = Math.abs(v.x-opt.x)<1e-7 && Math.abs(v.y-opt.y)<1e-7;
+    html += `<tr class="${isOpt?'optr':''}">
+      <td>${isOpt?'★ ':' '}${LETTERS[i]||i}</td>
+      <td>${fmtN(v.x)}</td>
+      <td>${fmtN(v.y)}</td>
+      <td>${fmtN(v.z)}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+
+  // Solución óptima
+  html += `
+    <div>
+      <div class="res-title">Solución Óptima</div>
+      <div class="opt-box">
+        <div class="opt-type">${typeStr}</div>
+        <div class="opt-val">Z = ${fmtN(opt.z)}</div>
+        <div class="opt-pt">en x = ${fmtN(opt.x)},  y = ${fmtN(opt.y)}</div>
+      </div>
+    </div>`;
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ===================
+// UTILIDADES
+// ===================
+function fmtN(n) {
+  if (n == null) return '';
+  const r = Math.round(n * 1e6) / 1e6;
+  if (Number.isInteger(r)) return r.toString();
+  const s = r.toFixed(4);
+  return parseFloat(s).toString();
+}
+
+function fmtEq(a, b, c, sign) {
+  let s = '';
+  if (a != null && a !== 0) {
+    s = a===1 ? 'x' : a===-1 ? '-x' : `${fmtN(a)}x`;
+  }
+  if (b != null && b !== 0) {
+    if (s !== '') {
+      s += b>0 ? ` + ${b===1?'':fmtN(b)}y` : ` - ${b===-1?'':fmtN(Math.abs(b))}y`;
+    } else {
+      s = b===1 ? 'y' : b===-1 ? '-y' : `${fmtN(b)}y`;
+    }
+  }
+  if (!s) s = '0';
+  if (sign && c != null) s += ` ${sign} ${fmtN(c)}`;
+  return s;
+}
+
+function clipLine(a, b, c, x0, x1, y0, y1) {
+  const eps = 1e-8;
+  const pts = [];
+
+  if (Math.abs(b) > 1e-10) {
+    let y = (c - a*x0)/b;
+    if (y >= y0-eps && y <= y1+eps) pts.push({ x:x0, y:Math.min(y1,Math.max(y0,y)) });
+    y = (c - a*x1)/b;
+    if (y >= y0-eps && y <= y1+eps) pts.push({ x:x1, y:Math.min(y1,Math.max(y0,y)) });
+  }
+  if (Math.abs(a) > 1e-10) {
+    let x = (c - b*y0)/a;
+    if (x >= x0-eps && x <= x1+eps) pts.push({ x:Math.min(x1,Math.max(x0,x)), y:y0 });
+    x = (c - b*y1)/a;
+    if (x >= x0-eps && x <= x1+eps) pts.push({ x:Math.min(x1,Math.max(x0,x)), y:y1 });
+  }
+
+  const u = dedupe(pts, 1e-6);
+  if (u.length < 2) return null;
+  return [u[0], u[u.length-1]];
+}
+
+function niceStep(range, n=6) {
+  if (range <= 0) return 1;
+  const raw = range/n;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw/mag;
+  const nice = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  return nice*mag;
+}
+
+function niceMax(v) {
+  if (v <= 0) return 10;
+  const s = niceStep(v, 6);
+  return Math.ceil(v/s)*s;
+}
+
+// ===================
+// RESIZE
+// ===================
+let rtm;
+window.addEventListener('resize', () => {
+  clearTimeout(rtm);
+  rtm = setTimeout(solve, 200);
+});
+
+// ===================
+// INICIO
+// ===================
+renderCons();
+solve();
+</script>
+</body>
+</html>

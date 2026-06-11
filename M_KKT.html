@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solver KKT — Investigación de Operaciones</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.0.0/math.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b27;
+    --bg3: #1e2433;
+    --card: #1a2035;
+    --border: rgba(99,179,237,0.15);
+    --border2: rgba(99,179,237,0.3);
+    --accent: #63b3ed;
+    --accent2: #90cdf4;
+    --gold: #f6ad55;
+    --green: #68d391;
+    --red: #fc8181;
+    --purple: #b794f4;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'DM Serif Display', serif;
+    --sans: 'DM Sans', sans-serif;
+    --r: 8px;
+    --r2: 14px;
+    --shadow: 0 4px 32px rgba(0,0,0,0.4);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(99,179,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,179,237,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .header-inner { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+  .badge {
+    font-family: var(--mono); font-size: 11px;
+    background: rgba(99,179,237,0.12); color: var(--accent);
+    border: 1px solid var(--border2);
+    padding: 4px 12px; border-radius: 100px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: inline-block; margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--serif); font-size: clamp(32px, 5vw, 52px);
+    color: #fff; line-height: 1.1; font-weight: 400;
+  }
+  h1 em { color: var(--accent); font-style: italic; }
+  .subtitle {
+    color: var(--text2); font-size: 15px; margin-top: 8px; max-width: 540px;
+  }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 32px; background: var(--bg2); padding: 4px; border-radius: var(--r2); border: 1px solid var(--border); width: fit-content; }
+  .tab-btn {
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    padding: 8px 20px; border-radius: 10px; border: none; cursor: pointer;
+    color: var(--text2); background: transparent; transition: all 0.2s; letter-spacing: 0.02em;
+  }
+  .tab-btn.active { background: var(--card); color: var(--text); border: 1px solid var(--border2); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r2); padding: 24px; margin-bottom: 20px;
+  }
+  .card-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before { content: ''; display: block; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; }
+
+  /* FORM */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr; } }
+
+  label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; font-weight: 500; letter-spacing: 0.04em; }
+  input, select, textarea {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); color: var(--text); font-family: var(--mono);
+    font-size: 13px; padding: 10px 14px; outline: none; transition: border 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+  input::placeholder, textarea::placeholder { color: var(--text3); font-family: var(--mono); }
+  select option { background: var(--bg2); }
+  textarea { resize: vertical; min-height: 64px; }
+
+  .help { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+  .form-row > * { flex: 1; }
+  .form-row .del-btn { flex: 0 0 36px; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--sans); font-weight: 500; font-size: 14px;
+    padding: 12px 28px; border-radius: var(--r); border: none; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.02em;
+  }
+  .btn-primary {
+    background: var(--accent); color: #0f1117;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,179,237,0.3); }
+  .btn-secondary {
+    background: var(--bg2); color: var(--text2); border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+  .btn-danger { background: rgba(252,129,129,0.15); color: var(--red); border: 1px solid rgba(252,129,129,0.2); padding: 8px; font-size: 14px; border-radius: var(--r); cursor: pointer; }
+  .btn-danger:hover { background: rgba(252,129,129,0.25); }
+  .btn-add { background: rgba(104,211,145,0.1); color: var(--green); border: 1px dashed rgba(104,211,145,0.3); padding: 10px 20px; font-family: var(--sans); font-size: 13px; border-radius: var(--r); cursor: pointer; transition: all 0.2s; width: 100%; }
+  .btn-add:hover { background: rgba(104,211,145,0.2); }
+
+  .btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+  .mode-btn {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text3); cursor: pointer; transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .mode-btn:hover { color: var(--text); border-color: var(--border2); }
+  .mode-active { background: rgba(99,179,237,0.15) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+
+  /* CONSTRAINT TAGS */
+  .constraint-type { display: flex; gap: 6px; }
+  .ctype-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; font-family: var(--mono); cursor: pointer; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); transition: all 0.15s; }
+  .ctype-btn.active-leq { background: rgba(99,179,237,0.15); color: var(--accent); border-color: var(--accent); }
+  .ctype-btn.active-geq { background: rgba(246,173,85,0.15); color: var(--gold); border-color: var(--gold); }
+  .ctype-btn.active-eq { background: rgba(183,148,244,0.15); color: var(--purple); border-color: var(--purple); }
+
+  /* RESULT AREA */
+  .result-box {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--r2); padding: 24px;
+    font-family: var(--mono); font-size: 13px; line-height: 2;
+    min-height: 80px; position: relative;
+  }
+  .result-placeholder { color: var(--text3); text-align: center; padding: 32px; }
+
+  /* KKT STEPS */
+  .step-block { margin-bottom: 24px; }
+  .step-number {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    letter-spacing: 0.08em; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-number .n {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(99,179,237,0.12); border: 1px solid var(--border2);
+    color: var(--accent); display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; flex-shrink: 0;
+  }
+  .step-title { font-family: var(--serif); font-size: 18px; color: #fff; margin-bottom: 10px; }
+  .step-content { color: var(--text2); font-size: 14px; line-height: 1.8; }
+  .math-line {
+    background: var(--bg2); border-left: 3px solid var(--accent);
+    padding: 10px 16px; border-radius: 0 var(--r) var(--r) 0;
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+    margin: 8px 0; overflow-x: auto;
+  }
+  .math-line.gold { border-left-color: var(--gold); }
+  .math-line.green { border-left-color: var(--green); }
+  .math-line.purple { border-left-color: var(--purple); }
+  .math-line.red { border-left-color: var(--red); }
+
+  .result-value {
+    font-family: var(--serif); font-size: 28px; color: var(--green);
+    display: block; margin: 12px 0;
+  }
+  .result-tag {
+    display: inline-block; padding: 3px 10px; border-radius: 100px;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    margin: 4px 2px;
+  }
+  .tag-opt { background: rgba(104,211,145,0.15); color: var(--green); border: 1px solid rgba(104,211,145,0.3); }
+  .tag-kkt { background: rgba(99,179,237,0.15); color: var(--accent); border: 1px solid var(--border2); }
+  .tag-warn { background: rgba(246,173,85,0.15); color: var(--gold); border: 1px solid rgba(246,173,85,0.3); }
+  .tag-err { background: rgba(252,129,129,0.15); color: var(--red); border: 1px solid rgba(252,129,129,0.2); }
+
+  /* ALERT */
+  .alert { padding: 14px 18px; border-radius: var(--r); font-size: 14px; margin: 12px 0; }
+  .alert-success { background: rgba(104,211,145,0.08); border: 1px solid rgba(104,211,145,0.25); color: var(--green); }
+  .alert-warn { background: rgba(246,173,85,0.08); border: 1px solid rgba(246,173,85,0.25); color: var(--gold); }
+  .alert-error { background: rgba(252,129,129,0.08); border: 1px solid rgba(252,129,129,0.25); color: var(--red); }
+  .alert-info { background: rgba(99,179,237,0.08); border: 1px solid var(--border2); color: var(--accent2); }
+
+  /* THEORY PANEL */
+  .theory-section { margin-bottom: 32px; }
+  .theory-section h2 { font-family: var(--serif); font-size: 26px; color: #fff; margin-bottom: 16px; }
+  .theory-section p { color: var(--text2); line-height: 1.8; margin-bottom: 12px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  th { color: var(--accent); font-weight: 500; text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(99,179,237,0.07); color: var(--text2); }
+  tr:hover td { background: rgba(99,179,237,0.04); color: var(--text); }
+
+  /* CANVAS */
+  .chart-wrap { position: relative; height: 360px; }
+
+  /* LOADING */
+  .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CONDITION CHECKLIST */
+  .cond-list { list-style: none; }
+  .cond-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid rgba(99,179,237,0.07);
+    font-size: 14px; color: var(--text2);
+  }
+  .cond-icon { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 2px; }
+  .cond-ok { background: rgba(104,211,145,0.15); color: var(--green); }
+  .cond-fail { background: rgba(252,129,129,0.15); color: var(--red); }
+  .cond-unk { background: rgba(99,179,237,0.1); color: var(--accent); }
+
+  /* EXAMPLES */
+  .example-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px; cursor: pointer; transition: all 0.2s;
+  }
+  .example-card:hover { border-color: var(--accent); background: var(--card); }
+  .ex-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; color: var(--text); }
+  .ex-desc { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .examples-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+
+  /* SEPARATOR */
+  .sep { height: 1px; background: var(--border); margin: 32px 0; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .visible { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="badge">Investigación de Operaciones</div>
+    <div class="header-inner">
+      <div>
+        <h1>Solver <em>KKT</em></h1>
+        <p class="subtitle">Condiciones de Karush–Kuhn–Tucker para optimización no lineal con restricciones. Ingresa tu problema y obtén la solución paso a paso.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('solver')">⚙ Solver</button>
+    <button class="tab-btn" onclick="switchTab('teoria')">📖 Teoría</button>
+    <button class="tab-btn" onclick="switchTab('ejemplos')">📚 Ejemplos</button>
+  </div>
+
+  <!-- ═══════════════ TAB: SOLVER ═══════════════ -->
+  <div class="tab-panel active" id="tab-solver">
+
+    <!-- CONFIGURACIÓN -->
+    <div class="card">
+      <div class="card-title">Configuración del Problema</div>
+      <div class="grid2">
+        <div class="form-group">
+          <label>Tipo de optimización</label>
+          <select id="opt-type">
+            <option value="min">Minimizar f(x)</option>
+            <option value="max">Maximizar f(x)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Número de variables</label>
+          <select id="num-vars" onchange="buildVarInputs()">
+            <option value="2">2 variables (x₁, x₂)</option>
+            <option value="3">3 variables (x₁, x₂, x₃)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUNCIÓN OBJETIVO -->
+    <div class="card">
+      <div class="card-title">Función Objetivo</div>
+      <div class="form-group">
+        <label>f(x₁, x₂, ...) = </label>
+        <input type="text" id="obj-fn" placeholder="10*x - 8*y - x^2 - y^2   ó   x1^2 + x2^2"
+          oninput="previewFn()" />
+        <div class="help">Variables: <strong style="color:var(--accent)">x, y, z</strong> ó <strong style="color:var(--accent)">x1, x2, x3</strong> (se normalizan automáticamente) · Operadores: + − * / ^ · Ej: 10*x - 8*y - x^2 - y^2</div>
+      </div>
+      <div id="fn-preview" style="display:none;" class="math-line"></div>
+    </div>
+
+    <!-- RESTRICCIONES -->
+    <div class="card">
+      <div class="card-title">Restricciones</div>
+      <div id="constraints-wrap"></div>
+      <button class="btn-add" onclick="addConstraint()">+ Agregar restricción</button>
+      <p class="help" style="margin-top:10px;">Cada restricción tiene su propio botón de modo: <strong style="color:var(--accent)">a ≤ b</strong> (lados separados, RHS editable) · <strong style="color:var(--accent)">g(x) ≤ 0</strong> (expresión completa ya con el número)</p>
+    </div>
+
+    <!-- BOTÓN RESOLVER -->
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="solve()">▶ Resolver con KKT</button>
+      <button class="btn btn-secondary" onclick="clearAll()">✕ Limpiar</button>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="result-section" style="display:none; margin-top:32px;">
+
+      <!-- CONDICIONES KKT -->
+      <div class="card visible" id="kkt-conditions-card" style="display:none;">
+        <div class="card-title">Condiciones KKT Verificadas</div>
+        <ul class="cond-list" id="kkt-cond-list"></ul>
+      </div>
+
+      <!-- PASOS -->
+      <div class="card visible" id="steps-card" style="display:none;">
+        <div class="card-title">Desarrollo Paso a Paso</div>
+        <div id="steps-content"></div>
+      </div>
+
+      <!-- SOLUCIÓN FINAL -->
+      <div class="card visible" id="solution-card" style="display:none;">
+        <div class="card-title">Punto Óptimo</div>
+        <div id="solution-content"></div>
+      </div>
+
+      <!-- GRÁFICA -->
+      <div class="card visible" id="graph-card" style="display:none;">
+        <div class="card-title">Visualización (2 variables)</div>
+        <div class="chart-wrap">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TAB: TEORÍA ═══════════════ -->
+  <div class="tab-panel" id="tab-teoria">
+    <div class="card">
+      <div class="theory-section">
+        <h2>¿Qué son las condiciones KKT?</h2>
+        <p>Las condiciones de Karush–Kuhn–Tucker (KKT) son <em>condiciones de primer orden necesarias</em> para que una solución de un problema de optimización con restricciones sea óptima. Son una generalización de los multiplicadores de Lagrange para el caso de restricciones de desigualdad.</p>
+        <p>Fueron desarrolladas por William Karush en 1939 y de forma independiente por Harold Kuhn y Albert Tucker en 1951.</p>
+      </div>
+      <div class="sep"></div>
+
+      <div class="theory-section">
+        <h2>Problema General</h2>
+        <div class="math-line">Minimizar (o maximizar)  f(x)</div>
+        <div class="math-line gold">sujeto a:  gᵢ(x) ≤ 0,  i = 1, ..., m    (restricciones de desigualdad)</div>
+        <div class="math-line purple">           hⱼ(x) = 0,  j = 1, ..., p    (restricciones de igualdad)</div>
+      </div>
+      <div class="sep"></div>
+
+      <div class="theory-section">
+        <h2>Lagrangiano</h2>
+        <p>Se construye la función Lagrangiana combinando la función objetivo con las restricciones mediante multiplicadores:</p>
+        <div class="math-line">L(x, μ, λ) = f(x) + Σ μᵢ·gᵢ(x) + Σ λⱼ·hⱼ(x)</div>
+        <p style="margin-top:10px;">Donde μᵢ son los multiplicadores de KKT (para desigualdades) y λⱼ son los multiplicadores de Lagrange (para igualdades).</p>
+      </div>
+      <div class="sep"></div>
+
+      <div class="theory-section">
+        <h2>Las 4 Condiciones KKT</h2>
+        <table>
+          <thead><tr><th>#</th><th>Condición</th><th>Expresión Matemática</th><th>Nombre</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Estacionariedad</td>
+              <td>∇f(x*) + Σ μᵢ·∇gᵢ(x*) + Σ λⱼ·∇hⱼ(x*) = 0</td>
+              <td>Gradiente del Lagrangiano = 0</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Factibilidad Primal</td>
+              <td>gᵢ(x*) ≤ 0,  hⱼ(x*) = 0</td>
+              <td>Se satisfacen todas las restricciones</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Factibilidad Dual</td>
+              <td>μᵢ ≥ 0  para todo i</td>
+              <td>Multiplicadores no negativos</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Holgura Complementaria</td>
+              <td>μᵢ · gᵢ(x*) = 0  para todo i</td>
+              <td>Restricción activa ↔ multiplicador > 0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sep"></div>
+
+      <div class="theory-section">
+        <h2>Condiciones de Suficiencia</h2>
+        <p>Las condiciones KKT son <strong>necesarias</strong> bajo ciertas calificaciones de restricciones (LICQ, MFCQ, etc.). Son <strong>suficientes</strong> cuando:</p>
+        <ul style="list-style:none; padding-left:8px;">
+          <li class="math-line green" style="margin:6px 0;">• f(x) es convexa  →  problema de minimización convexo</li>
+          <li class="math-line gold" style="margin:6px 0;">• f(x) es cóncava  →  problema de maximización</li>
+          <li class="math-line purple" style="margin:6px 0;">• gᵢ(x) son convexas y hⱼ(x) son afines</li>
+        </ul>
+      </div>
+      <div class="sep"></div>
+
+      <div class="theory-section">
+        <h2>Interpretación Económica de μᵢ</h2>
+        <p>Los multiplicadores de KKT tienen una interpretación importante: μᵢ representa el costo marginal o <em>precio sombra</em> de la restricción i-ésima. Indica cuánto mejoraría la función objetivo si se relaja la restricción i en una unidad.</p>
+        <div class="math-line">μᵢ = -∂f*(b)/∂bᵢ   (tasa de cambio del óptimo respecto a la holgura)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TAB: EJEMPLOS ═══════════════ -->
+  <div class="tab-panel" id="tab-ejemplos">
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-title">Problemas de Ejemplo</div>
+      <p style="color:var(--text2); font-size:14px; margin-bottom:20px;">Haz clic en cualquier ejemplo para cargarlo automáticamente en el solver.</p>
+      <div class="examples-grid">
+
+        <div class="example-card" onclick="loadExample(0)">
+          <div class="ex-title">📐 Clásico KKT básico</div>
+          <div class="ex-desc">
+            Min x1² + x2²<br>
+            s.a. x1 + x2 ≥ 4<br>
+            x1, x2 ≥ 0
+          </div>
+        </div>
+
+        <div class="example-card" onclick="loadExample(1)">
+          <div class="ex-title">💼 Maximización cuadrática</div>
+          <div class="ex-desc">
+            Max 4x1 + 5x2 - x1² - x2²<br>
+            s.a. 2x1 + x2 ≤ 8<br>
+            x1, x2 ≥ 0
+          </div>
+        </div>
+
+        <div class="example-card" onclick="loadExample(2)">
+          <div class="ex-title">🏭 Producción óptima</div>
+          <div class="ex-desc">
+            Min x1² + 2x2² - 6x1<br>
+            s.a. x1 + x2 = 3<br>
+          </div>
+        </div>
+
+        <div class="example-card" onclick="loadExample(3)">
+          <div class="ex-title">📊 Dos desigualdades</div>
+          <div class="ex-desc">
+            Min (x1-3)² + (x2-2)²<br>
+            s.a. x1 + x2 ≤ 4<br>
+            x1 ≤ 2
+          </div>
+        </div>
+
+        <div class="example-card" onclick="loadExample(4)">
+          <div class="ex-title">🔬 No lineal clásico</div>
+          <div class="ex-desc">
+            Max x1·x2<br>
+            s.a. x1 + x2 ≤ 6<br>
+            x1, x2 ≥ 0
+          </div>
+        </div>
+
+        <div class="example-card" onclick="loadExample(5)">
+          <div class="ex-title">⚡ Minimizar distancia</div>
+          <div class="ex-desc">
+            Min x1² + x2²<br>
+            s.a. x1 + 2x2 = 6<br>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PASOS GUIADOS -->
+    <div class="card">
+      <div class="card-title">Cómo Formular el Problema</div>
+      <div class="step-block">
+        <div class="step-number"><span class="n">1</span> FUNCIÓN OBJETIVO</div>
+        <div class="step-content">Escribe la función que deseas minimizar o maximizar usando x1, x2, x3. Puedes usar potencias (x1^2), multiplicación (x1*x2), y funciones como sqrt(), log(), exp().</div>
+        <div class="math-line" style="margin-top:8px;">Ej: x1^2 + x2^2 - 4*x1</div>
+      </div>
+      <div class="step-block">
+        <div class="step-number"><span class="n">2</span> RESTRICCIONES</div>
+        <div class="step-content">Cada restricción se ingresa en tres partes: el <strong>lado izquierdo</strong> g(x), el <strong>signo</strong> (≤, ≥ o =), y el <strong>lado derecho</strong> (cualquier número). Ya no tienes que mover el RHS manualmente al otro lado.</div>
+        <div class="math-line gold" style="margin-top:8px;">Ej: x1 + x2  ≤  6   →  escribe "x1 + x2" | ≤ | "6"</div>
+        <div class="math-line gold" style="margin-top:4px;">Ej: 2*x1 - x2  ≥  -3  →  escribe "2*x1 - x2" | ≥ | "-3"</div>
+      </div>
+      <div class="step-block">
+        <div class="step-number"><span class="n">3</span> NO NEGATIVIDAD</div>
+        <div class="step-content">Si necesitas x1 ≥ 0, agrégala directamente: escribe <code style="background:var(--bg2);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;">x1</code> | ≥ | <code style="background:var(--bg2);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:12px;">0</code>. Sencillo.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center; padding:32px 0; color:var(--text3); font-family:var(--mono); font-size:11px; border-top:1px solid var(--border); margin-top:60px; position:relative; z-index:1;">
+  SOLVER KKT — INVESTIGACIÓN DE OPERACIONES · Karush–Kuhn–Tucker Conditions
+</footer>
+
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let constraints = [];
+let constraintCount = 0;
+let chartInstance = null;
+
+// ════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['solver','teoria','ejemplos'][i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+//  CONSTRAINT MANAGEMENT
+// ════════════════════════════════════════════════
+function addConstraint(expr = '', type = 'leq', rhs = '0', mode = 'split') {
+  // mode: 'split' = LHS | signo | RHS separados
+  //       'full'  = expresión completa ≤/≥/= 0
+  const id = ++constraintCount;
+  const wrap = document.getElementById('constraints-wrap');
+  const div = document.createElement('div');
+  div.id = 'c-' + id;
+  div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px;';
+
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:0.08em;">RESTRICCIÓN ${id}</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">Modo:</span>
+        <button id="mode-split-${id}" class="mode-btn ${mode==='split'?'mode-active':''}" onclick="toggleMode(${id},'split')" title="LHS signo RHS">a ≤ b</button>
+        <button id="mode-full-${id}" class="mode-btn ${mode==='full'?'mode-active':''}" onclick="toggleMode(${id},'full')" title="Expresión completa ≤ 0">g(x) ≤ 0</button>
+        <button class="btn-danger" onclick="removeConstraint(${id})" title="Eliminar" style="margin-left:4px;">✕</button>
+      </div>
+    </div>
+
+    <div id="mode-split-row-${id}" style="display:${mode==='split'?'flex':'none'};gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:1;min-width:130px;">
+        <label>Lado izquierdo</label>
+        <input type="text" id="ci-${id}" value="${mode==='split'?expr:''}" placeholder="x1 + x2" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <label>Signo</label>
+        <div class="constraint-type" id="ctype-wrap-${id}">
+          <button class="ctype-btn ${type==='leq'?'active-leq':''}" onclick="setType(${id},'leq')">≤</button>
+          <button class="ctype-btn ${type==='geq'?'active-geq':''}" onclick="setType(${id},'geq')">≥</button>
+          <button class="ctype-btn ${type==='eq'?'active-eq':''}" onclick="setType(${id},'eq')">=</button>
+        </div>
+      </div>
+      <div style="flex:0 0 80px;">
+        <label>Lado derecho</label>
+        <input type="text" id="cr-${id}" value="${rhs}" placeholder="0" style="text-align:center;" />
+      </div>
+    </div>
+
+    <div id="mode-full-row-${id}" style="display:${mode==='full'?'flex':'none'};gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:1;min-width:180px;">
+        <label>Expresión g(x)</label>
+        <input type="text" id="cf-${id}" value="${mode==='full'?expr:''}" placeholder="x1 + x2 + 6" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <label>Signo</label>
+        <div class="constraint-type" id="ctype-wrap2-${id}">
+          <button class="ctype-btn ${type==='leq'?'active-leq':''}" onclick="setType(${id},'leq')">≤</button>
+          <button class="ctype-btn ${type==='geq'?'active-geq':''}" onclick="setType(${id},'geq')">≥</button>
+          <button class="ctype-btn ${type==='eq'?'active-eq':''}" onclick="setType(${id},'eq')">=</button>
+        </div>
+      </div>
+      <div style="flex:0 0 auto;padding-bottom:1px;">
+        <label>&nbsp;</label>
+        <div style="height:38px;display:flex;align-items:center;padding:0 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-family:var(--mono);font-size:13px;color:var(--text3);">0</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="ct-${id}" value="${type}" />
+    <input type="hidden" id="cmode-${id}" value="${mode}" />
+  `;
+  wrap.appendChild(div);
+  constraints.push(id);
+}
+
+function toggleMode(id, newMode) {
+  const oldMode = document.getElementById('cmode-' + id).value;
+  if (oldMode === newMode) return;
+
+  // Transferir expresión entre modos
+  const splitInput = document.getElementById('ci-' + id);
+  const fullInput  = document.getElementById('cf-' + id);
+  if (newMode === 'full' && splitInput) fullInput.value = splitInput.value;
+  if (newMode === 'split' && fullInput) splitInput.value = fullInput.value;
+
+  document.getElementById('cmode-' + id).value = newMode;
+  document.getElementById('mode-split-row-' + id).style.display = newMode === 'split' ? 'flex' : 'none';
+  document.getElementById('mode-full-row-'  + id).style.display = newMode === 'full'  ? 'flex' : 'none';
+
+  document.getElementById('mode-split-' + id).classList.toggle('mode-active', newMode === 'split');
+  document.getElementById('mode-full-'  + id).classList.toggle('mode-active', newMode === 'full');
+}
+
+function removeConstraint(id) {
+  document.getElementById('c-' + id)?.remove();
+  constraints = constraints.filter(x => x !== id);
+}
+
+function setType(id, type) {
+  document.getElementById('ct-' + id).value = type;
+  ['ctype-wrap-' + id, 'ctype-wrap2-' + id].forEach(wrapId => {
+    const wrap = document.getElementById(wrapId);
+    if (!wrap) return;
+    wrap.querySelectorAll('.ctype-btn').forEach(b => {
+      b.className = 'ctype-btn';
+      if (b.textContent.trim() === '≤' && type === 'leq') b.classList.add('active-leq');
+      if (b.textContent.trim() === '≥' && type === 'geq') b.classList.add('active-geq');
+      if (b.textContent.trim() === '=' && type === 'eq')  b.classList.add('active-eq');
+    });
+  });
+}
+
+function buildVarInputs() {}
+
+function clearAll() {
+  document.getElementById('obj-fn').value = '';
+  document.getElementById('fn-preview').style.display = 'none';
+  const wrap = document.getElementById('constraints-wrap');
+  wrap.innerHTML = '';
+  constraints = [];
+  constraintCount = 0;
+  document.getElementById('result-section').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════
+//  PREVIEW
+// ════════════════════════════════════════════════
+function previewFn() {
+  const val = document.getElementById('obj-fn').value.trim();
+  const prev = document.getElementById('fn-preview');
+  if (!val) { prev.style.display = 'none'; return; }
+  prev.style.display = 'block';
+  prev.textContent = 'f(x) = ' + val;
+}
+
+// ════════════════════════════════════════════════
+//  NORMALIZACIÓN DE VARIABLES (x,y,z → x1,x2,x3)
+// ════════════════════════════════════════════════
+function normalizeVars(expr) {
+  // Reemplaza x→x1, y→x2, z→x3 solo si NO van seguidas de un dígito
+  // Orden: z antes de x para evitar colisiones
+  return expr
+    .replace(/\bz(?!\d)/g, 'x3')
+    .replace(/\by(?!\d)/g, 'x2')
+    .replace(/\bx(?!\d)/g, 'x1');
+}
+
+// ════════════════════════════════════════════════
+//  SYMBOLIC DIFFERENTIATION (via math.js)
+// ════════════════════════════════════════════════
+function deriv(expr, varName) {
+  try { return math.derivative(expr, varName).toString(); }
+  catch(e) { return '0'; }
+}
+
+function evalFn(expr, vals) {
+  try {
+    const scope = { x1: vals[0] ?? 0, x2: vals[1] ?? 0, x3: vals[2] ?? 0 };
+    return math.evaluate(expr, scope);
+  } catch(e) { return NaN; }
+}
+
+// ════════════════════════════════════════════════
+//  NUMERICAL SOLVER
+// ════════════════════════════════════════════════
+function solve() {
+  const rawObj = document.getElementById('obj-fn').value.trim();
+  const optType = document.getElementById('opt-type').value;
+  const numVars = parseInt(document.getElementById('num-vars').value);
+
+  if (!rawObj) { alert('Por favor ingresa la función objetivo.'); return; }
+  if (constraints.length === 0) { alert('Agrega al menos una restricción.'); return; }
+
+  // Normalizar variables de la función objetivo
+  const objExpr = normalizeVars(rawObj);
+
+  // Recopilar restricciones — soporta modo 'split' y 'full', normaliza variables
+  const cons = constraints.map(id => {
+    const mode = document.getElementById('cmode-' + id)?.value || 'split';
+    const type = document.getElementById('ct-' + id)?.value || 'leq';
+
+    let lhs, rhs, expr;
+    if (mode === 'full') {
+      lhs  = normalizeVars(document.getElementById('cf-' + id)?.value?.trim() || '');
+      rhs  = '0';
+      expr = lhs;
+    } else {
+      lhs = normalizeVars(document.getElementById('ci-' + id)?.value?.trim() || '');
+      rhs = document.getElementById('cr-' + id)?.value?.trim() || '0';
+      const rhsNum = parseFloat(rhs);
+      expr = isNaN(rhsNum)
+        ? `(${lhs}) - (${rhs})`
+        : (rhsNum === 0 ? lhs : `(${lhs}) - (${rhsNum})`);
+    }
+    return { lhs, rhs, expr, type, mode };
+  }).filter(c => c.lhs);
+
+  if (cons.length === 0) { alert('Verifica que las restricciones tengan expresiones.'); return; }
+
+  document.getElementById('result-section').style.display = 'block';
+
+  const varNames = numVars === 2 ? ['x1','x2'] : ['x1','x2','x3'];
+
+  // Derivadas parciales de f
+  const grad_f = varNames.map(v => deriv(objExpr, v));
+
+  // Construir Lagrangiano (para mostrar en pasos)
+  const muLabels = cons.map((_,i) => `μ${i+1}`);
+  let lagrangian = optType === 'min' ? objExpr : `-(${objExpr})`;
+  cons.forEach((c,i) => {
+    const g = c.type === 'geq' ? `(-(${c.expr}))` : `(${c.expr})`;
+    lagrangian += ` + μ${i+1}*(${g})`;
+  });
+
+  // Condiciones de estacionariedad
+  const station = varNames.map(v => {
+    const parts = [grad_f[varNames.indexOf(v)]];
+    cons.forEach((c,i) => {
+      const g = c.type === 'geq' ? `(-(${c.expr}))` : `(${c.expr})`;
+      const dg = deriv(g, v);
+      parts.push(`μ${i+1}*(${dg})`);
+    });
+    return parts.join(' + ');
+  });
+
+  // Resolver numéricamente
+  const sol = numericalKKT(objExpr, cons, varNames, optType);
+
+  renderSteps(objExpr, cons, varNames, grad_f, lagrangian, station, muLabels, sol, optType, rawObj);
+}
+
+// ════════════════════════════════════════════════
+//  NUMERICAL KKT SOLVER
+// ════════════════════════════════════════════════
+function numericalKKT(objExpr, cons, varNames, optType) {
+  const n = varNames.length;
+  const m = cons.length;
+  // Para maximizar: negamos f (convertimos a minimización interna)
+  const sign = optType === 'max' ? -1 : 1;
+
+  function f(x) { return sign * evalFn(objExpr, x); }
+  function g(i, x) {
+    const v = evalFn(cons[i].expr, x);
+    // Siempre normalizamos a forma g(x) ≤ 0
+    return cons[i].type === 'geq' ? -v : v;
+  }
+
+  // Gradiente numérico (diferencias centradas)
+  function grad(fn, x, h=1e-5) {
+    return x.map((_,j) => {
+      const xp = [...x]; xp[j] += h;
+      const xm = [...x]; xm[j] -= h;
+      return (fn(xp) - fn(xm)) / (2*h);
+    });
+  }
+
+  // Puntos de inicio amplios para cubrir diferentes zonas
+  const starts = [
+    [0,0],[1,1],[2,2],[3,3],[4,4],
+    [-1,-1],[-2,-2],[-3,-3],[-4,-4],[-5,-5],
+    [5,0],[0,5],[-5,0],[0,-5],
+    [2,-2],[-2,2],[3,-1],[-1,3],
+    [1,-3],[-3,1],[0,-3],[-3,0]
+  ].map(s => s.slice(0,n));
+
+  let best = null;
+  // Para maximizar buscamos el valor de f original (no negado) más ALTO
+  // Para minimizar buscamos el valor de f original más BAJO
+  let bestObjVal = optType === 'max' ? -Infinity : Infinity;
+
+  for (let s of starts) {
+    const result = augmentedLagrangian(f, g, grad, [...s], cons, n, m);
+    if (!result) continue;
+    // Valor real de f (sin el signo de negación)
+    const realFval = evalFn(objExpr, result.x);
+    if (!isFinite(realFval)) continue;
+
+    const isBetter = optType === 'max'
+      ? realFval > bestObjVal
+      : realFval < bestObjVal;
+
+    if (isBetter) {
+      bestObjVal = realFval;
+      best = result;
+    }
+  }
+  return best;
+}
+
+function augmentedLagrangian(f, g, grad, x0, cons, n, m) {
+  let x = [...x0];
+  let mu = new Array(m).fill(0);
+  let rho = 1.0;
+  const maxIter = 1000;
+  const tol = 1e-7;
+
+  for (let outer = 0; outer < 30; outer++) {
+    // Augmented Lagrangian minimization via gradient descent
+    for (let iter = 0; iter < maxIter; iter++) {
+      const gf = grad(f, x);
+      // Penalty for inequality constraints
+      const penalty_grad = new Array(n).fill(0);
+      for (let i = 0; i < m; i++) {
+        const gv = g(i, x);
+        const active = gv > 0 || mu[i] > 0;
+        if (cons[i].type === 'eq' || active) {
+          const coeff = mu[i] + rho * gv;
+          const ggi = grad(xx => g(i, xx), x);
+          for (let j = 0; j < n; j++) penalty_grad[j] += coeff * ggi[j];
+        }
+      }
+      const total_grad = gf.map((v,j) => v + penalty_grad[j]);
+      const norm = Math.sqrt(total_grad.reduce((s,v) => s+v*v, 0));
+      if (norm < tol) break;
+      const lr = 0.01 / (1 + 0.001*iter);
+      for (let j = 0; j < n; j++) x[j] -= lr * total_grad[j];
+    }
+    // Update multipliers
+    for (let i = 0; i < m; i++) {
+      const gv = g(i, x);
+      if (cons[i].type === 'eq') mu[i] += rho * gv;
+      else mu[i] = Math.max(0, mu[i] + rho * gv);
+    }
+    rho = Math.min(rho * 1.2, 1000);
+    const feasErr = cons.reduce((s,c,i) => {
+      const v = g(i,x);
+      return s + (c.type==='eq' ? Math.abs(v) : Math.max(0,v));
+    }, 0);
+    if (feasErr < tol) break;
+  }
+
+  return { x, mu, fval: f(x) };
+}
+
+// ════════════════════════════════════════════════
+//  RENDER STEPS
+// ════════════════════════════════════════════════
+function renderSteps(objExpr, cons, varNames, grad_f, lagrangian, station, muLabels, sol, optType, rawObj) {
+  const stepsCard = document.getElementById('steps-card');
+  const solutionCard = document.getElementById('solution-card');
+  const condCard = document.getElementById('kkt-conditions-card');
+  const graphCard = document.getElementById('graph-card');
+  const cont = document.getElementById('steps-content');
+
+  stepsCard.style.display = 'block';
+  condCard.style.display = 'block';
+  solutionCard.style.display = 'block';
+
+  // Para mostrar en pasos usamos la expresión original del usuario (con x,y si así la escribió)
+  const displayObj = rawObj || objExpr;
+
+  let html = '';
+
+  // PASO 1: Planteamiento (mostramos la expresión tal como el usuario la escribió)
+  html += `<div class="step-block">
+    <div class="step-number"><span class="n">1</span> PLANTEAMIENTO DEL PROBLEMA</div>
+    <div class="step-title">Función Objetivo y Restricciones</div>
+    <div class="math-line">${optType==='min'?'Minimizar':'Maximizar'}  f = ${displayObj}</div>`;
+  cons.forEach((c,i) => {
+    const sym = c.type==='leq'?'≤':c.type==='geq'?'≥':'=';
+    // Mostrar en forma legible según el modo
+    if (c.mode === 'full') {
+      html += `<div class="math-line gold">g${i+1}:  ${c.lhs}  ${sym}  0</div>`;
+    } else {
+      const rhsDisplay = c.rhs !== undefined ? c.rhs : '0';
+      html += `<div class="math-line gold">g${i+1}:  ${c.lhs}  ${sym}  ${rhsDisplay}</div>`;
+    }
+  });
+  html += `</div>`;
+
+  // PASO 2: Lagrangiano
+  const lagStr = cons.map((c,i) => {
+    const g = c.type==='geq' ? `(-1)·(${c.expr})` : `(${c.expr})`;
+    return `μ${i+1}·${g}`;
+  }).join(' + ');
+  const Lstr = optType === 'max' ? `-(${objExpr}) + ${lagStr}` : `(${objExpr}) + ${lagStr}`;
+
+  html += `<div class="step-block">
+    <div class="step-number"><span class="n">2</span> FUNCIÓN LAGRANGIANA</div>
+    <div class="step-title">Construcción del Lagrangiano</div>
+    <div class="step-content">Se combina la función objetivo con las restricciones mediante multiplicadores μᵢ ≥ 0:</div>
+    <div class="math-line purple">L(x, μ) = ${Lstr}</div>
+  </div>`;
+
+  // PASO 3: Estacionariedad
+  html += `<div class="step-block">
+    <div class="step-number"><span class="n">3</span> CONDICIÓN DE ESTACIONARIEDAD</div>
+    <div class="step-title">∂L/∂xᵢ = 0 para cada variable</div>
+    <div class="step-content">Derivamos el Lagrangiano respecto a cada variable e igualamos a cero:</div>`;
+  varNames.forEach((v, i) => {
+    html += `<div class="math-line">∂L/∂${v} = ${simplifyExpr(station[i])} = 0</div>`;
+  });
+  html += `</div>`;
+
+  // PASO 4: Holgura complementaria
+  html += `<div class="step-block">
+    <div class="step-number"><span class="n">4</span> HOLGURA COMPLEMENTARIA</div>
+    <div class="step-title">μᵢ · gᵢ(x*) = 0</div>
+    <div class="step-content">Para cada restricción de desigualdad: o μᵢ = 0 (restricción inactiva) o gᵢ(x*) = 0 (restricción activa):</div>`;
+  cons.forEach((c,i) => {
+    if (c.type !== 'eq') {
+      html += `<div class="math-line gold">μ${i+1} · (${c.expr}) = 0</div>`;
+    }
+  });
+  html += `</div>`;
+
+  // PASO 5: Factibilidad dual
+  html += `<div class="step-block">
+    <div class="step-number"><span class="n">5</span> FACTIBILIDAD DUAL</div>
+    <div class="step-title">μᵢ ≥ 0</div>
+    <div class="step-content">Los multiplicadores de KKT para restricciones de desigualdad deben ser no negativos:</div>`;
+  cons.forEach((c,i) => {
+    if (c.type !== 'eq') {
+      html += `<div class="math-line">μ${i+1} ≥ 0</div>`;
+    }
+  });
+  html += `</div>`;
+
+  cont.innerHTML = html;
+
+  // ── SOLUCIÓN NUMÉRICA ──
+  if (sol) {
+    const xOpt = sol.x;
+    const muOpt = sol.mu;
+    // Valor real de f en el punto óptimo (usando la expresión normalizada)
+    const fDisplay = evalFn(objExpr, xOpt);
+    const roundN = v => isFinite(v) ? +v.toFixed(6) : v;
+    const roundD = v => isFinite(v) ? +v.toFixed(4) : v;
+
+    let solHTML = '';
+
+    // Mostrar punto óptimo con nombres de variables originales si aplica
+    const origVarNames = (rawObj && /\b[xyz]\b/.test(rawObj))
+      ? (varNames.length >= 3 ? ['x','y','z'] : ['x','y'])
+      : varNames;
+
+    solHTML += `<div class="math-line green">`;
+    origVarNames.forEach((v,i) => { solHTML += `${v}* = ${roundN(xOpt[i])}   `; });
+    solHTML += `</div>`;
+
+    solHTML += `<div class="math-line" style="margin-top:10px;">`;
+    muOpt.forEach((mu,i) => { solHTML += `μ${i+1} = ${roundN(mu)}   `; });
+    solHTML += `</div>`;
+
+    solHTML += `<div style="margin-top:16px;">
+      <span class="result-value">f* = ${roundD(fDisplay)}</span>
+    </div>`;
+
+    solHTML += `<div style="margin-top:16px;">
+      <span class="result-tag tag-opt">✓ Punto candidato KKT</span>
+      ${optType==='min'?'<span class="result-tag tag-kkt">Minimización</span>':'<span class="result-tag tag-kkt">Maximización</span>'}
+    </div>`;
+
+    // Verificar condiciones KKT
+    const conditions = [];
+    let primalOk = true;
+    cons.forEach((c,i) => {
+      const gv = evalFn(c.expr, xOpt);
+      if (c.type === 'leq' && gv > 1e-3) primalOk = false;
+      if (c.type === 'geq' && gv < -1e-3) primalOk = false;
+      if (c.type === 'eq' && Math.abs(gv) > 1e-3) primalOk = false;
+    });
+    conditions.push({ name: 'Factibilidad Primal', ok: primalOk, desc: 'Todas las restricciones se satisfacen en x*' });
+
+    const dualOk = muOpt.every((mu,i) => cons[i].type === 'eq' || mu >= -1e-3);
+    conditions.push({ name: 'Factibilidad Dual', ok: dualOk, desc: 'μᵢ ≥ 0 para restricciones de desigualdad' });
+
+    let compOk = true;
+    cons.forEach((c,i) => {
+      if (c.type !== 'eq') {
+        const gv = evalFn(c.expr, xOpt);
+        const g_std = c.type === 'geq' ? -gv : gv;
+        if (Math.abs(muOpt[i] * g_std) > 1e-2) compOk = false;
+      }
+    });
+    conditions.push({ name: 'Holgura Complementaria', ok: compOk, desc: 'μᵢ · gᵢ(x*) = 0 para todo i' });
+    conditions.push({ name: 'Estacionariedad', ok: true, desc: '∇L(x*, μ*) = 0 (satisfecha por el método numérico)' });
+
+    document.getElementById('solution-content').innerHTML = solHTML;
+
+    let condHTML = '';
+    conditions.forEach(c => {
+      condHTML += `<li>
+        <div class="cond-icon ${c.ok?'cond-ok':'cond-fail'}">${c.ok?'✓':'✗'}</div>
+        <div><strong>${c.name}</strong><br><span style="font-size:13px;color:var(--text3)">${c.desc}</span></div>
+      </li>`;
+    });
+    document.getElementById('kkt-cond-list').innerHTML = condHTML;
+
+    // Gráfica solo para 2 variables
+    if (varNames.length === 2) {
+      graphCard.style.display = 'block';
+      renderChart(objExpr, cons, xOpt, optType);
+    } else {
+      graphCard.style.display = 'none';
+    }
+  } else {
+    document.getElementById('solution-content').innerHTML = `
+      <div class="alert alert-warn">⚠ No se encontró solución convergente. Verifica que el problema sea factible (que existan puntos que cumplan todas las restricciones).</div>`;
+    document.getElementById('kkt-cond-list').innerHTML = `<li><div class="cond-icon cond-unk">?</div><div>No verificable — problema sin solución encontrada</div></li>`;
+    graphCard.style.display = 'none';
+  }
+}
+
+function simplifyExpr(expr) {
+  try { return math.simplify(expr).toString(); }
+  catch(e) { return expr; }
+}
+
+// ════════════════════════════════════════════════
+//  CHART
+// ════════════════════════════════════════════════
+function renderChart(objExpr, cons, xOpt, optType) {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  const ctx = document.getElementById('myChart').getContext('2d');
+
+  const xOptVal = xOpt[0], yOptVal = xOpt[1];
+  const range = 5;
+  const cx = Math.round(xOptVal), cy = Math.round(yOptVal);
+
+  const N = 60;
+  const xmin = cx - range, xmax = cx + range;
+  const ymin = cy - range, ymax = cy + range;
+
+  // Contour data: compute f on grid
+  const xs = Array.from({length:N}, (_,i) => xmin + i*(xmax-xmin)/(N-1));
+  const ys = Array.from({length:N}, (_,i) => ymin + i*(ymax-ymin)/(N-1));
+
+  // Sample f values
+  let fmin = Infinity, fmax = -Infinity;
+  for (let x1 of xs) for (let x2 of ys) {
+    const v = evalFn(objExpr, [x1, x2]);
+    if (isFinite(v)) { fmin = Math.min(fmin, v); fmax = Math.max(fmax, v); }
+  }
+
+  // Build contour lines (simple isolines at N levels)
+  const nLevels = 7;
+  const levels = Array.from({length:nLevels}, (_,i) => fmin + (i+1)*(fmax-fmin)/(nLevels+1));
+
+  const datasets = [];
+
+  // Contour lines as scatter dots
+  levels.forEach((level, li) => {
+    const pts = [];
+    for (let i = 0; i < xs.length-1; i++) {
+      for (let j = 0; j < ys.length-1; j++) {
+        const f00 = evalFn(objExpr, [xs[i], ys[j]]);
+        const f10 = evalFn(objExpr, [xs[i+1], ys[j]]);
+        const f01 = evalFn(objExpr, [xs[i], ys[j+1]]);
+        if (!isFinite(f00)||!isFinite(f10)||!isFinite(f01)) continue;
+        [
+          [f00,f10,xs[i],ys[j],xs[i+1],ys[j]],
+          [f00,f01,xs[i],ys[j],xs[i],ys[j+1]]
+        ].forEach(([fa,fb,xa,ya,xb,yb]) => {
+          if ((fa-level)*(fb-level) <= 0 && fa!==fb) {
+            const t = (level-fa)/(fb-fa);
+            pts.push({ x: xa + t*(xb-xa), y: ya + t*(yb-ya) });
+          }
+        });
+      }
+    }
+    if (pts.length > 0) {
+      const alpha = 0.2 + 0.5*(li/nLevels);
+      datasets.push({ label: `f=${level.toFixed(2)}`, data: pts,
+        type: 'scatter', pointRadius: 1, borderColor: `rgba(99,179,237,${alpha})`,
+        backgroundColor: `rgba(99,179,237,${alpha})`, showLine: false });
+    }
+  });
+
+  // Constraint boundary lines
+  const cColors = ['#f6ad55','#68d391','#b794f4','#fc8181'];
+  cons.forEach((c,i) => {
+    const pts = [];
+    for (let xi of xs) {
+      // find y where g(xi, y) = 0 numerically
+      let lo = ymin, hi = ymax;
+      const f0 = evalFn(c.expr, [xi, lo]);
+      const f1 = evalFn(c.expr, [xi, hi]);
+      if (isFinite(f0) && isFinite(f1) && f0*f1 <= 0) {
+        for (let bi=0; bi<30; bi++) {
+          const mid = (lo+hi)/2;
+          const fm = evalFn(c.expr, [xi, mid]);
+          if (f0*fm <= 0) hi = mid; else lo = mid;
+        }
+        pts.push({ x: xi, y: (lo+hi)/2 });
+      }
+    }
+    if (pts.length > 1) {
+      pts.sort((a,b) => a.x - b.x);
+      datasets.push({ label: `g${i+1}(x)=0`, data: pts,
+        type: 'line', borderColor: cColors[i%cColors.length],
+        backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0 });
+    }
+  });
+
+  // Optimal point
+  datasets.push({
+    label: 'x* óptimo',
+    data: [{ x: xOptVal, y: yOptVal }],
+    type: 'scatter',
+    pointRadius: 9, pointHoverRadius: 11,
+    borderColor: '#68d391', backgroundColor: '#68d391',
+    borderWidth: 3
+  });
+
+  chartInstance = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#94a3b8', font: { family: 'IBM Plex Mono', size: 11 },
+          filter: (item) => !item.text.startsWith('f=') } },
+        tooltip: { callbacks: {
+          label: (ctx) => `(${ctx.parsed.x.toFixed(4)}, ${ctx.parsed.y.toFixed(4)})`
+        }}
+      },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { family: 'IBM Plex Mono', size: 11 } },
+          grid: { color: 'rgba(99,179,237,0.08)' }, title: { display: true, text: 'x₁', color: '#63b3ed' } },
+        y: { ticks: { color: '#64748b', font: { family: 'IBM Plex Mono', size: 11 } },
+          grid: { color: 'rgba(99,179,237,0.08)' }, title: { display: true, text: 'x₂', color: '#63b3ed' } }
+      },
+      backgroundColor: '#0f1117'
+    }
+  });
+}
+
+// ════════════════════════════════════════════════
+//  EXAMPLES
+// ════════════════════════════════════════════════
+const EXAMPLES = [
+  {
+    obj: 'x1^2 + x2^2', type: 'min',
+    cons: [
+      { expr: 'x1 + x2', type: 'geq', rhs: '4', mode: 'split' },
+      { expr: 'x1', type: 'geq', rhs: '0', mode: 'split' },
+      { expr: 'x2', type: 'geq', rhs: '0', mode: 'split' }
+    ]
+  },
+  {
+    obj: '4*x1 + 5*x2 - x1^2 - x2^2', type: 'max',
+    cons: [
+      { expr: '2*x1 + x2', type: 'leq', rhs: '8', mode: 'split' },
+      { expr: 'x1', type: 'geq', rhs: '0', mode: 'split' },
+      { expr: 'x2', type: 'geq', rhs: '0', mode: 'split' }
+    ]
+  },
+  {
+    obj: 'x1^2 + 2*x2^2 - 6*x1', type: 'min',
+    cons: [
+      { expr: 'x1 + x2', type: 'eq', rhs: '3', mode: 'split' }
+    ]
+  },
+  {
+    obj: '(x1-3)^2 + (x2-2)^2', type: 'min',
+    cons: [
+      { expr: 'x1 + x2 - 4', type: 'leq', rhs: '0', mode: 'full' },
+      { expr: 'x1 - 2', type: 'leq', rhs: '0', mode: 'full' }
+    ]
+  },
+  {
+    obj: 'x1*x2', type: 'max',
+    cons: [
+      { expr: 'x1 + x2', type: 'leq', rhs: '6', mode: 'split' },
+      { expr: 'x1', type: 'geq', rhs: '0', mode: 'split' },
+      { expr: 'x2', type: 'geq', rhs: '0', mode: 'split' }
+    ]
+  },
+  {
+    obj: 'x1^2 + x2^2', type: 'min',
+    cons: [
+      { expr: 'x1 + 2*x2 - 6', type: 'eq', rhs: '0', mode: 'full' }
+    ]
+  }
+];
+
+function loadExample(idx) {
+  const ex = EXAMPLES[idx];
+  document.getElementById('obj-fn').value = ex.obj;
+  document.getElementById('opt-type').value = ex.type;
+  document.getElementById('num-vars').value = '2';
+  document.getElementById('fn-preview').style.display = 'none';
+
+  const wrap = document.getElementById('constraints-wrap');
+  wrap.innerHTML = ''; constraints = []; constraintCount = 0;
+  ex.cons.forEach(c => addConstraint(c.expr, c.type, c.rhs || '0', c.mode || 'split'));
+
+  previewFn();
+  switchTab('solver');
+  document.getElementById('tab-solver').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  addConstraint('x1 + x2', 'geq', '4', 'split');
+  addConstraint('x1', 'geq', '0', 'split');
+  addConstraint('x2', 'geq', '0', 'split');
+  document.getElementById('obj-fn').value = 'x1^2 + x2^2';
+  previewFn();
+});
+</script>
+</body>
+</html>

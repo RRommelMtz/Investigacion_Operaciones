@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IOPE — Investigación de Operaciones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:    #070B18;
+      --bg-card:    #0D1325;
+      --bg-card2:   #111828;
+      --border:     #1E2D4A;
+      --accent:     #4F9EFF;
+      --accent2:    #00D4AA;
+      --accent3:    #A855F7;
+      --accent4:    #F59E0B;
+      --text-hi:    #E8EDF5;
+      --text-mid:   #8A9BBF;
+      --text-lo:    #4A5878;
+      --font-disp:  'Space Grotesk', sans-serif;
+      --font-body:  'Inter', sans-serif;
+      --font-mono:  'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-hi);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BG ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: .35;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      padding: 80px 40px 64px;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(79,158,255,.1);
+      border: 1px solid rgba(79,158,255,.25);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .hero-badge span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+
+    .hero h1 {
+      font-family: var(--font-disp);
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -.02em;
+      margin-bottom: 20px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+      max-width: 580px;
+      margin: 0 auto 48px;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-n {
+      font-family: var(--font-disp);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-l { font-size: .78rem; color: var(--text-lo); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 16px;
+      max-width: 1200px; margin: 0 auto 48px;
+      padding: 0 40px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .divider-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-lo);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── GRID ── */
+    .methods-grid {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto 80px;
+      padding: 0 40px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      cursor: default;
+    }
+    .card:hover {
+      border-color: var(--card-accent, var(--accent));
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    }
+
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+    .card-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: color-mix(in srgb, var(--card-accent, var(--accent)) 15%, transparent);
+      border: 1px solid color-mix(in srgb, var(--card-accent, var(--accent)) 30%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+
+    .card-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--card-accent, var(--accent));
+      background: color-mix(in srgb, var(--card-accent, var(--accent)) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--card-accent, var(--accent)) 25%, transparent);
+      border-radius: 4px;
+      padding: 3px 8px;
+      white-space: nowrap;
+    }
+
+    .card-title {
+      font-family: var(--font-disp);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-hi);
+      letter-spacing: -.01em;
+    }
+
+    .card-formula {
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--card-accent, var(--accent));
+      background: color-mix(in srgb, var(--card-accent, var(--accent)) 6%, transparent);
+      border-left: 2px solid var(--card-accent, var(--accent));
+      padding: 6px 10px;
+      border-radius: 0 4px 4px 0;
+      line-height: 1.5;
+    }
+
+    .card-desc {
+      font-size: .85rem;
+      color: var(--text-mid);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+
+    .card-complexity {
+      font-size: .75rem;
+      color: var(--text-lo);
+      font-family: var(--font-mono);
+    }
+
+    .btn-run {
+      display: flex; align-items: center; gap: 6px;
+      background: color-mix(in srgb, var(--card-accent, var(--accent)) 18%, transparent);
+      border: 1px solid color-mix(in srgb, var(--card-accent, var(--accent)) 40%, transparent);
+      color: var(--card-accent, var(--accent));
+      border-radius: 7px;
+      padding: 7px 16px;
+      font-family: var(--font-disp);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .15s, box-shadow .15s;
+    }
+    .btn-run:hover {
+      background: color-mix(in srgb, var(--card-accent, var(--accent)) 28%, transparent);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--card-accent, var(--accent)) 30%, transparent);
+    }
+    .btn-run svg { width: 13px; height: 13px; fill: currentColor; }
+
+    /* ── AUTHOR ── */
+    .author-bar {
+      position: relative; z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      max-width: 900px;
+      margin: -24px auto 56px;
+      padding: 0 40px;
+    }
+    .author-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 22px;
+    }
+    .author-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-disp);
+      font-weight: 700;
+      font-size: .95rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .author-info { display: flex; flex-direction: column; gap: 3px; }
+    .author-name {
+      font-family: var(--font-disp);
+      font-size: .92rem;
+      font-weight: 600;
+      color: var(--text-hi);
+      letter-spacing: -.01em;
+    }
+    .author-meta {
+      font-size: .75rem;
+      color: var(--text-mid);
+      font-family: var(--font-body);
+    }
+    .author-meta span {
+      color: var(--accent2);
+      font-weight: 500;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 32px;
+      border-top: 1px solid var(--border);
+      color: var(--text-lo);
+      font-size: .78rem;
+      font-family: var(--font-mono);
+      letter-spacing: .05em;
+    }
+
+    @media(max-width: 600px) {
+      .hero { padding: 60px 20px 48px; }
+      .methods-grid { padding: 0 16px; gap: 12px; }
+      .divider { padding: 0 16px; }
+      .hero-stats { gap: 28px; }
+      .author-bar { padding: 0 16px; }
+      .author-card { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-badge"><span></span>C:\ IOPE — Módulos Activos</div>
+  <h1>Investigación de<br><em>Operaciones</em></h1>
+  <p>Herramientas de optimización matemática: programación lineal, no lineal, redes y flujos. Selecciona un método y ejecuta el modelo correspondiente.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-n">12</div><div class="stat-l">Métodos</div></div>
+    <div class="stat"><div class="stat-n">4</div><div class="stat-l">Categorías</div></div>
+    <div class="stat"><div class="stat-n">∞</div><div class="stat-l">Iteraciones</div></div>
+  </div>
+</section>
+
+<!-- ══ AUTHOR ══════════════════════════════════════════ -->
+<div class="author-bar">
+  <div class="author-card">
+    <div class="author-avatar">JR</div>
+    <div class="author-info">
+      <div class="author-name">Juan Rommel Martínez Castillo</div>
+      <div class="author-meta">Ingeniero Industrial &nbsp;·&nbsp; <span>Universidad La Salle Oaxaca</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DIVIDER ══════════════════════════════════════════ -->
+<div class="divider"><span class="divider-label">// métodos disponibles</span></div>
+
+<!-- ══ GRID ══════════════════════════════════════════════ -->
+<div class="methods-grid">
+
+  <!-- 1. SIMPLEX_M -->
+  <div class="card" style="--card-accent:#4F9EFF">
+    <div class="card-header">
+      <div class="card-icon">Σ</div>
+      <span class="card-tag">PL · Lineal</span>
+    </div>
+    <div class="card-title">Método Simplex — Gran M</div>
+    <div class="card-formula">max cᵀx  s.a.  Ax ≤ b,  x ≥ 0</div>
+    <div class="card-desc">Algoritmo iterativo que recorre los vértices del poliedro factible para maximizar o minimizar una función objetivo lineal. La variante Gran M penaliza variables artificiales con un costo M → ∞, evitando soluciones infactibles.</div>
+    <div class="card-footer">
+      <span class="card-complexity">O(2ⁿ) worst-case</span>
+      <a class="btn-run" href="SIMPLEX_M.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 2. F_MAXIMO -->
+  <div class="card" style="--card-accent:#00D4AA">
+    <div class="card-header">
+      <div class="card-icon">⊳⊳</div>
+      <span class="card-tag">Redes · Flujo</span>
+    </div>
+    <div class="card-title">Flujo Máximo</div>
+    <div class="card-formula">max Σ fᵢⱼ  s.a.  0 ≤ fᵢⱼ ≤ cᵢⱼ</div>
+    <div class="card-desc">Determina la cantidad máxima de flujo que puede circular desde la fuente (s) hasta el sumidero (t) en una red de capacidades. Se basa en el teorema de corte mínimo–flujo máximo (Ford-Fulkerson / Edmonds-Karp).</div>
+    <div class="card-footer">
+      <span class="card-complexity">O(VE²)</span>
+      <a class="btn-run" href="F_MAXIMO.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 3. M_GRAFICO -->
+  <div class="card" style="--card-accent:#A855F7">
+    <div class="card-header">
+      <div class="card-icon">◲</div>
+      <span class="card-tag">PL · Gráfico</span>
+    </div>
+    <div class="card-title">Método Gráfico</div>
+    <div class="card-formula">Región factible en ℝ² → vértice óptimo</div>
+    <div class="card-desc">Solución visual de problemas de programación lineal con dos variables de decisión. Traza las restricciones, identifica la región factible y determina el vértice donde la función objetivo alcanza su óptimo.</div>
+    <div class="card-footer">
+      <span class="card-complexity">n = 2 variables</span>
+      <a class="btn-run" href="M_GRAFICO.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 4. M_HUNGARO -->
+  <div class="card" style="--card-accent:#F59E0B">
+    <div class="card-header">
+      <div class="card-icon">✦</div>
+      <span class="card-tag">Asignación</span>
+    </div>
+    <div class="card-title">Método Húngaro</div>
+    <div class="card-formula">min Σᵢⱼ cᵢⱼ xᵢⱼ  s.a. asignación perfecta</div>
+    <div class="card-desc">Resuelve el problema de asignación óptima en tiempo polinomial O(n³). Reduce la matriz de costos por filas y columnas, y encuentra una asignación perfecta mediante cobertura de ceros. Ideal para asignación de recursos, trabajos o rutas.</div>
+    <div class="card-footer">
+      <span class="card-complexity">O(n³)</span>
+      <a class="btn-run" href="M_HUNGARO.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 5. M_KKT -->
+  <div class="card" style="--card-accent:#FF6B9D">
+    <div class="card-header">
+      <div class="card-icon">∇</div>
+      <span class="card-tag">PNL · Óptimo</span>
+    </div>
+    <div class="card-title">Condiciones KKT</div>
+    <div class="card-formula">∇f = Σ λᵢ∇gᵢ + Σ μⱼ∇hⱼ,  λᵢgᵢ=0</div>
+    <div class="card-desc">Condiciones de Karush-Kuhn-Tucker: criterio necesario (y suficiente bajo convexidad) de optimalidad para programación no lineal con restricciones de igualdad y desigualdad. Generalización de los multiplicadores de Lagrange.</div>
+    <div class="card-footer">
+      <span class="card-complexity">PNL general</span>
+      <a class="btn-run" href="M_KKT.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 6. M_NOCONVEXO -->
+  <div class="card" style="--card-accent:#00D4AA">
+    <div class="card-header">
+      <div class="card-icon">∿</div>
+      <span class="card-tag">PNL · No convexo</span>
+    </div>
+    <div class="card-title">Programación No Convexa</div>
+    <div class="card-formula">f no convexa → múltiples mínimos locales</div>
+    <div class="card-desc">Optimización de funciones con regiones factibles o funciones objetivo no convexas, donde pueden existir múltiples óptimos locales. Se aplican métodos de búsqueda global, penalización o relajación para encontrar el óptimo global.</div>
+    <div class="card-footer">
+      <span class="card-complexity">NP-hard en general</span>
+      <a class="btn-run" href="M_NOCONVEXO.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 7. M_TRANSPORTE -->
+  <div class="card" style="--card-accent:#F59E0B">
+    <div class="card-header">
+      <div class="card-icon">⊞</div>
+      <span class="card-tag">Redes · Transporte</span>
+    </div>
+    <div class="card-title">Método de Transporte</div>
+    <div class="card-formula">min Σᵢⱼ cᵢⱼ xᵢⱼ  s.a. Σⱼ xᵢⱼ = sᵢ, Σᵢ xᵢⱼ = dⱼ</div>
+    <div class="card-desc">Modelo de programación lineal para distribuir bienes de m orígenes a n destinos minimizando costos. Se resuelve con tablas: esquina noroeste o costo mínimo como solución inicial, luego método MODI / stepping stone para optimizar.</div>
+    <div class="card-footer">
+      <span class="card-complexity">O(m·n·(m+n))</span>
+      <a class="btn-run" href="M_TRANSPORTE.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 9. P_CONVEXA -->
+  <div class="card" style="--card-accent:#A855F7">
+    <div class="card-header">
+      <div class="card-icon">∪</div>
+      <span class="card-tag">PNL · Convexa</span>
+    </div>
+    <div class="card-title">Programación Convexa</div>
+    <div class="card-formula">f convexa, gᵢ convexa → mín. local = global</div>
+    <div class="card-desc">Clase de PNL donde la función objetivo y la región factible son convexas, garantizando que todo mínimo local sea global. Incluye programación cuadrática convexa, SOCP y SDP. Se resuelve eficientemente con métodos de punto interior.</div>
+    <div class="card-footer">
+      <span class="card-complexity">Polinomial</span>
+      <a class="btn-run" href="P_CONVEXA.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 10. P_CUADRATICA -->
+  <div class="card" style="--card-accent:#FF6B9D">
+    <div class="card-header">
+      <div class="card-icon">x²</div>
+      <span class="card-tag">PNL · Cuadrática</span>
+    </div>
+    <div class="card-title">Programación Cuadrática</div>
+    <div class="card-formula">min ½xᵀQx + cᵀx  s.a. Ax ≤ b</div>
+    <div class="card-desc">Optimiza una función objetivo cuadrática sujeta a restricciones lineales. Si Q es semidefinida positiva el problema es convexo. Se resuelve con el algoritmo de Wolf, gradiente reducido o métodos de punto activo.</div>
+    <div class="card-footer">
+      <span class="card-complexity">O(n³) si Q ≻ 0</span>
+      <a class="btn-run" href="P_CUADRATICA.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 11. PROGRAM_SEPARABLE -->
+  <div class="card" style="--card-accent:#00D4AA">
+    <div class="card-header">
+      <div class="card-icon">⊕</div>
+      <span class="card-tag">PNL · Separable</span>
+    </div>
+    <div class="card-title">Programación Separable</div>
+    <div class="card-formula">min Σᵢ fᵢ(xᵢ)  s.a. Σᵢ gᵢⱼ(xᵢ) ≤ bⱼ</div>
+    <div class="card-desc">Caso especial de PNL donde la función objetivo y las restricciones son sumas de funciones univariadas. Se linealiza mediante aproximación por tramos (PLSep) y se resuelve como un problema de PL ampliado, siendo muy eficiente en la práctica.</div>
+    <div class="card-footer">
+      <span class="card-complexity">Aprox. lineal por tramos</span>
+      <a class="btn-run" href="PROGRAM_SEPARABLE.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 12. RUTAM_CORTA -->
+  <div class="card" style="--card-accent:#4F9EFF">
+    <div class="card-header">
+      <div class="card-icon">↝</div>
+      <span class="card-tag">Redes · Rutas</span>
+    </div>
+    <div class="card-title">Ruta Más Corta</div>
+    <div class="card-formula">d(v) = min{d(u) + w(u,v)}  ∀ v ∈ V</div>
+    <div class="card-desc">Encuentra el camino de menor costo entre un origen y uno o todos los destinos en una red ponderada. Algoritmos: Dijkstra (pesos positivos O((V+E)logV)), Bellman-Ford (pesos negativos O(VE)) o Floyd-Warshall (todos los pares O(V³)).</div>
+    <div class="card-footer">
+      <span class="card-complexity">O((V+E) log V)</span>
+      <a class="btn-run" href="RUTAM_CORTA.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+  <!-- 13. TRANSBORDO1 -->
+  <div class="card" style="--card-accent:#F59E0B">
+    <div class="card-header">
+      <div class="card-icon">⇄</div>
+      <span class="card-tag">Redes · Transbordo+</span>
+    </div>
+    <div class="card-title">Transbordo Extendido</div>
+    <div class="card-formula">Nodos fuente + intermedios + sumideros</div>
+    <div class="card-desc">Versión extendida del modelo de transbordo con configuraciones de red más complejas: múltiples fuentes, sumideros y puntos de distribución intermedia. Permite modelar cadenas de suministro reales con restricciones de capacidad en arcos y nodos.</div>
+    <div class="card-footer">
+      <span class="card-complexity">Flujo en redes generales</span>
+      <a class="btn-run" href="TRANSBORDO1.html" target="_blank">
+        <svg viewBox="0 0 16 16"><path d="M3 2l10 6-10 6V2z"/></svg> Ejecutar
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOOTER ══════════════════════════════════════════ -->
+<footer>
+  Juan Rommel Martínez Castillo &nbsp;·&nbsp; Ing. Industrial &nbsp;·&nbsp; La Salle Oaxaca &nbsp;·&nbsp; IOPE 2026
+</footer>
+
+</body>
+</html>

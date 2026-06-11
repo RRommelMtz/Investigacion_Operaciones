@@ -1,0 +1,406 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--bg2:#161b27;--bg3:#1e2535;--bg4:#252d3e;
+  --bd:#2e3a50;--bd2:#3d4f6a;
+  --acc:#4f8ef7;--acc2:#7ab3ff;--acd:#1e3560;
+  --grn:#3ecf8e;--grd:#0e3322;
+  --amb:#f5a623;--red:#f75f5f;
+  --tx:#e8eaf0;--tx2:#8a94a8;--tx3:#4a5568;
+  --fn:'Space Grotesk',sans-serif;--fm:'IBM Plex Mono',monospace;
+}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn)}
+
+.header{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;background:var(--bg2)}
+.hico{width:34px;height:34px;background:var(--acd);border:1px solid var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.hico svg{width:17px;height:17px;stroke:var(--acc2);fill:none;stroke-width:2}
+.header h1{font-size:15px;font-weight:600}
+.header p{font-size:11px;color:var(--tx2)}
+.badge{margin-left:auto;background:var(--acd);color:var(--acc2);font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--acc)}
+
+.toolbar{padding:8px 16px;border-bottom:1px solid var(--bd);background:var(--bg2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tbtn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx2);font-size:12px;font-family:var(--fn);cursor:pointer;transition:all .14s;font-weight:500;white-space:nowrap}
+.tbtn:hover{border-color:var(--acc);color:var(--acc2);background:var(--acd)}
+.tbtn.active{border-color:var(--acc);color:var(--acc2);background:var(--acd)}
+.tbtn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.tsep{width:1px;height:22px;background:var(--bd);margin:0 2px}
+
+/* PESO EN TOOLBAR — siempre visible */
+.weight-box{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 12px;border-radius:7px;border:1.5px solid var(--acc);background:var(--acd);margin-left:4px}
+.weight-box label{font-size:11px;color:var(--acc2);font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.weight-box input{width:64px;padding:3px 7px;border-radius:5px;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx);font-family:var(--fm);font-size:14px;font-weight:500;text-align:center;outline:none}
+.weight-box input:focus{border-color:var(--acc)}
+.weight-hint{font-size:11px;color:var(--acc2);opacity:.7;white-space:nowrap}
+
+.canvas-wrap{position:relative}
+#cvs{display:block;width:100%;cursor:crosshair;background:var(--bg)}
+
+/* BOTTOM PANEL */
+.bottom{border-top:1px solid var(--bd);background:var(--bg2);display:flex;gap:0}
+
+.config-col{width:260px;flex-shrink:0;border-right:1px solid var(--bd);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ptitle{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);margin-bottom:2px}
+.frow{display:flex;flex-direction:column;gap:3px}
+.frow label{font-size:11px;color:var(--tx2);font-weight:500}
+.frow select{background:var(--bg3);border:1px solid var(--bd2);color:var(--tx);padding:6px 9px;border-radius:6px;font-size:13px;font-family:var(--fn);outline:none;width:100%}
+.frow select:focus{border-color:var(--acc)}
+.solve-btn{width:100%;padding:9px;border-radius:7px;border:1px solid var(--acc);background:var(--acd);color:var(--acc2);font-size:13px;font-weight:600;font-family:var(--fn);cursor:pointer;transition:all .18s}
+.solve-btn:hover{background:var(--acc);color:#fff}
+.clear-btn{width:100%;padding:6px;border-radius:7px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);font-size:11px;font-family:var(--fn);cursor:pointer;transition:all .15s}
+.clear-btn:hover{border-color:var(--red);color:var(--red)}
+
+.results-col{flex:1;padding:14px 16px;overflow-x:auto;display:flex;gap:20px;align-items:flex-start}
+.rempty{color:var(--tx3);font-size:12px;line-height:1.7;padding:6px 0}
+
+.path-box{background:var(--grd);border:1px solid var(--grn);border-radius:8px;padding:10px 14px;min-width:200px;flex-shrink:0}
+.path-box .pt{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--grn);opacity:.7;margin-bottom:6px}
+.path-nodes{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.pnode{background:var(--bg3);border:1px solid var(--grn);border-radius:5px;padding:3px 9px;font-size:13px;font-weight:600;color:var(--grn)}
+.parrow{color:var(--tx3);font-size:11px}
+.pcost{margin-top:8px;font-size:11px;color:var(--tx2)}
+.pcost span{color:var(--amb);font-family:var(--fm);font-weight:600}
+
+.dtable{border-collapse:collapse;font-size:12px;min-width:160px}
+.dtable th{text-align:left;padding:4px 10px;color:var(--tx3);font-weight:500;border-bottom:1px solid var(--bd);font-size:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.dtable td{padding:5px 10px;border-bottom:1px solid var(--bd)}
+.dtable tr:last-child td{border-bottom:none}
+.dtable .pr td{color:var(--grn);font-weight:500}
+.dtable .inf{color:var(--tx3)}
+.dtable .val{font-family:var(--fm);font-size:11px}
+
+.steps-list{display:flex;flex-direction:column;gap:4px;min-width:220px;max-width:300px}
+.step-it{background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:5px 9px;font-size:11px;color:var(--tx2);line-height:1.5;font-family:var(--fm)}
+.step-it.vis{border-color:var(--acc);color:var(--acc2);background:var(--acd)}
+.step-it b{color:var(--tx);font-family:var(--fn)}
+
+.err-box{background:#2a1010;border:1px solid #5a2020;border-radius:7px;padding:9px 12px;font-size:12px;color:#f08080}
+
+.mode-pill{margin-left:auto;font-size:11px;color:var(--tx3);font-style:italic;padding:3px 8px;border-radius:20px;border:1px solid var(--bd);background:var(--bg3)}
+
+/* node list strip */
+.nstrip{display:flex;gap:4px;flex-wrap:wrap}
+.nchip{display:flex;align-items:center;gap:5px;padding:3px 9px 3px 6px;border-radius:20px;background:var(--bg3);border:1px solid var(--bd);font-size:11px;font-weight:500}
+.ndot{width:8px;height:8px;border-radius:50%;background:var(--acc);flex-shrink:0}
+.ndel{color:var(--tx3);cursor:pointer;font-size:14px;line-height:1;margin-left:2px}
+.ndel:hover{color:var(--red)}
+</style>
+
+<div class="header">
+  <div class="hico"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><line x1="7" y1="12" x2="17" y2="6"/><line x1="7" y1="12" x2="17" y2="18"/></svg></div>
+  <div><h1>Ruta más corta — Dijkstra</h1><p>Investigación de Operaciones</p></div>
+  <div class="badge">IO</div>
+</div>
+
+<div class="toolbar">
+  <button class="tbtn active" id="btn-node" onclick="setMode('node')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>
+    Agregar nodo
+  </button>
+  <button class="tbtn" id="btn-edge" onclick="setMode('edge')">
+    <svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg>
+    Conectar arista
+  </button>
+  <button class="tbtn" id="btn-move" onclick="setMode('move')">
+    <svg viewBox="0 0 24 24"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+    Mover nodo
+  </button>
+  <div class="tsep"></div>
+
+  <!-- PESO SIEMPRE VISIBLE -->
+  <div class="weight-box" id="wbox">
+    <label>PESO DE ARISTA</label>
+    <input type="number" id="winput" value="1" min="0" max="9999" step="1" title="Peso de la próxima arista">
+    <span class="weight-hint" id="whint">← escribe el valor antes de conectar</span>
+  </div>
+
+  <div class="tsep"></div>
+  <button class="tbtn" onclick="loadExample()">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Ejemplo
+  </button>
+  <button class="tbtn" onclick="clearAll()">
+    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+    Limpiar
+  </button>
+  <span class="mode-pill" id="mpill">Clic en el canvas = nuevo nodo</span>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="cvs"></canvas>
+</div>
+
+<div class="bottom">
+  <div class="config-col">
+    <div>
+      <div class="ptitle">Nodos</div>
+      <div class="nstrip" id="nstrip"><span style="font-size:11px;color:var(--tx3)">Sin nodos</span></div>
+    </div>
+    <div class="frow"><label>Nodo origen (S)</label><select id="ssel"><option value="">— Origen —</option></select></div>
+    <div class="frow"><label>Nodo destino (T)</label><select id="dsel"><option value="">— Destino —</option></select></div>
+    <button class="solve-btn" onclick="solve()">▶ Calcular ruta más corta</button>
+    <button class="clear-btn" onclick="clearRes()">Limpiar resultados</button>
+  </div>
+  <div class="results-col" id="rcol">
+    <div class="rempty">Construye el grafo arriba, elige origen y destino, y presiona <b style="color:var(--tx2)">Calcular</b>.</div>
+  </div>
+</div>
+
+<script>
+const cvs=document.getElementById('cvs');
+const ctx=cvs.getContext('2d');
+let nodes=[],edges=[],mode='node',edgeStart=null,dragging=null,doff={x:0,y:0};
+let pathEdges=new Set(),pathNodes=new Set(),visitedNodes=new Set();
+let nc=0;
+const LBLS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function resize(){
+  cvs.width=cvs.parentElement.clientWidth;
+  cvs.height=320;
+  draw();
+}
+window.addEventListener('resize',resize);
+resize();
+
+function nextLabel(){
+  const used=new Set(nodes.map(n=>n.label));
+  for(let i=0;i<LBLS.length;i++) if(!used.has(LBLS[i])) return LBLS[i];
+  return String(nc);
+}
+
+function setMode(m){
+  mode=m; edgeStart=null;
+  ['node','edge','move'].forEach(x=>document.getElementById('btn-'+x).classList.remove('active'));
+  document.getElementById('btn-'+m).classList.add('active');
+  const hints={node:'Clic en el canvas = nuevo nodo',edge:'Clic nodo origen → nodo destino (peso arriba)',move:'Arrastra para reposicionar'};
+  document.getElementById('mpill').textContent=hints[m];
+  cvs.style.cursor=m==='move'?'grab':m==='edge'?'pointer':'crosshair';
+  
+  const wb=document.getElementById('wbox');
+  wb.style.opacity=m==='edge'?'1':'0.45';
+  document.getElementById('whint').textContent=m==='edge'?'← peso de la próxima arista':'(activo en modo arista)';
+  draw();
+}
+
+function nodeAt(x,y){
+  for(let i=nodes.length-1;i>=0;i--){const n=nodes[i];const d=Math.hypot(x-n.x,y-n.y);if(d<=24)return n;}
+  return null;
+}
+
+let mouseX=0,mouseY=0;
+cvs.addEventListener('mousedown',e=>{
+  const r=cvs.getBoundingClientRect();
+  const x=e.clientX-r.left,y=e.clientY-r.top;
+  if(mode==='node'){if(!nodeAt(x,y)){const l=nextLabel();nodes.push({id:++nc,label:l,x,y});updateUI();draw();}}
+  else if(mode==='edge'){
+    const n=nodeAt(x,y);
+    if(n){
+      if(!edgeStart){edgeStart=n;draw();}
+      else if(edgeStart!==n){
+        const dup=edges.find(e=>(e.f===edgeStart.id&&e.t===n.id)||(e.f===n.id&&e.t===edgeStart.id));
+        if(!dup){
+          const w=parseFloat(document.getElementById('winput').value);
+          const wv=isNaN(w)||w<0?1:w;
+          edges.push({f:edgeStart.id,t:n.id,w:wv,id:Date.now()+Math.random()});
+          updateUI();
+        }
+        edgeStart=null;draw();
+      } else {edgeStart=null;draw();}
+    }
+  }
+  else if(mode==='move'){const n=nodeAt(x,y);if(n){dragging=n;doff={x:x-n.x,y:y-n.y};cvs.style.cursor='grabbing';}}
+});
+cvs.addEventListener('mousemove',e=>{
+  const r=cvs.getBoundingClientRect();
+  mouseX=e.clientX-r.left;mouseY=e.clientY-r.top;
+  if(dragging){dragging.x=mouseX-doff.x;dragging.y=mouseY-doff.y;draw();}
+  else if(mode==='edge'&&edgeStart) draw();
+});
+cvs.addEventListener('mouseup',()=>{if(dragging)cvs.style.cursor='grab';dragging=null;});
+document.getElementById('winput').addEventListener('keydown',e=>{if(e.key==='Enter'&&mode==='edge')document.getElementById('mpill').textContent='Peso listo — haz clic en el nodo origen';});
+
+function srcId(){const v=document.getElementById('ssel').value;return v?parseInt(v):null;}
+function dstId(){const v=document.getElementById('dsel').value;return v?parseInt(v):null;}
+
+function draw(){
+  const W=cvs.width,H=cvs.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#1a2035';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  edges.forEach(e=>{
+    const fn=nodes.find(n=>n.id===e.f),tn=nodes.find(n=>n.id===e.t);
+    if(!fn||!tn)return;
+    const ip=pathEdges.has(e.id);
+    const iv=visitedNodes.has(fn.id)&&visitedNodes.has(tn.id);
+    const dx=tn.x-fn.x,dy=tn.y-fn.y,len=Math.hypot(dx,dy);
+    const nx=dx/len,ny=dy/len,R=26;
+    const x1=fn.x+nx*R,y1=fn.y+ny*R,x2=tn.x-nx*R,y2=tn.y-ny*R;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=ip?'#3ecf8e':iv?'#4f8ef799':'#3d4f6a';
+    ctx.lineWidth=ip?2.5:1.5;ctx.stroke();
+    const ang=Math.atan2(dy,dx),al=10,aw=0.35;
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-al*Math.cos(ang-aw),y2-al*Math.sin(ang-aw));
+    ctx.lineTo(x2-al*Math.cos(ang+aw),y2-al*Math.sin(ang+aw));
+    ctx.closePath();ctx.fillStyle=ip?'#3ecf8e':iv?'#4f8ef799':'#3d4f6a';ctx.fill();
+    const mx=(fn.x+tn.x)/2+ny*-14,my=(fn.y+tn.y)/2+(-nx)*14;
+    const wstr=String(e.w);
+    ctx.font='500 12px "IBM Plex Mono"';
+    const tw=ctx.measureText(wstr).width;
+    ctx.fillStyle='#0f1117dd';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(mx-tw/2-6,my-8,tw+12,16,3);else ctx.rect(mx-tw/2-6,my-8,tw+12,16);ctx.fill();
+    ctx.fillStyle=ip?'#3ecf8e':iv?'#7ab3ff':'#8a94a8';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(wstr,mx,my);
+  });
+
+  if(mode==='edge'&&edgeStart){
+    ctx.beginPath();ctx.moveTo(edgeStart.x,edgeStart.y);ctx.lineTo(mouseX,mouseY);
+    ctx.strokeStyle='#4f8ef788';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.stroke();ctx.setLineDash([]);
+    const wv=document.getElementById('winput').value||'?';
+    ctx.font='500 11px "IBM Plex Mono"';
+    const lx=(edgeStart.x+mouseX)/2,ly=(edgeStart.y+mouseY)/2-12;
+    const tw2=ctx.measureText(wv).width;
+    ctx.fillStyle='#1e3560dd';
+    if(ctx.roundRect)ctx.roundRect(lx-tw2/2-6,ly-8,tw2+12,16,3);else ctx.rect(lx-tw2/2-6,ly-8,tw2+12,16);
+    ctx.fill();ctx.fillStyle='#7ab3ff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(wv,lx,ly);
+  }
+
+  nodes.forEach(n=>{
+    const si=n.id===srcId(),di=n.id===dstId();
+    const ip=pathNodes.has(n.id),vi=visitedNodes.has(n.id),es=edgeStart&&edgeStart.id===n.id;
+    ctx.beginPath();ctx.arc(n.x,n.y,24,0,Math.PI*2);
+    ctx.fillStyle=si?'#0e3322':di?'#3a2600':ip?'#0a2418':vi?'#1a2550':'#1a2240';ctx.fill();
+    ctx.beginPath();ctx.arc(n.x,n.y,24,0,Math.PI*2);
+    ctx.strokeStyle=si?'#3ecf8e':di?'#f5a623':es?'#4f8ef7':ip?'#3ecf8e':vi?'#4f8ef7':'#3d4f6a';
+    ctx.lineWidth=si||di||es||ip?2.5:1.5;ctx.stroke();
+    ctx.font='600 14px "Space Grotesk"';
+    ctx.fillStyle=si?'#3ecf8e':di?'#f5a623':ip?'#3ecf8e':vi?'#7ab3ff':'#e8eaf0';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n.label,n.x,n.y);
+    if(n.dist!==undefined){
+      const ds=n.dist===Infinity?'∞':String(n.dist);
+      ctx.font='500 10px "IBM Plex Mono"';
+      const tw=ctx.measureText(ds).width;
+      ctx.fillStyle='#0f1117cc';ctx.fillRect(n.x-tw/2-4,n.y+26,tw+8,14);
+      ctx.fillStyle=n.dist===Infinity?'#4a5568':'#f5a623';
+      ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(ds,n.x,n.y+28);
+    }
+  });
+
+  if(mode==='edge'&&edgeStart){
+    ctx.font='12px "Space Grotesk"';ctx.fillStyle='#7ab3ff';ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText('Ahora haz clic en el nodo destino →',8,8);
+  }
+}
+
+function updateUI(){
+  const ns=document.getElementById('nstrip');
+  const si=srcId(),di=dstId();
+  if(nodes.length===0){ns.innerHTML='<span style="font-size:11px;color:var(--tx3)">Sin nodos</span>';
+  } else {
+    ns.innerHTML=nodes.map(n=>`<span class="nchip">
+      <span class="ndot" style="background:${n.id===si?'#3ecf8e':n.id===di?'#f5a623':'#4f8ef7'}"></span>
+      ${n.label}
+      <span class="ndel" onclick="delNode(${n.id})">×</span>
+    </span>`).join('');
+  }
+  const prev1=document.getElementById('ssel').value;
+  const prev2=document.getElementById('dsel').value;
+  const opts='<option value="">—</option>'+nodes.map(n=>`<option value="${n.id}">${n.label}</option>`).join('');
+  document.getElementById('ssel').innerHTML=opts;
+  document.getElementById('dsel').innerHTML=opts;
+  if(nodes.find(n=>n.id==prev1)) document.getElementById('ssel').value=prev1;
+  if(nodes.find(n=>n.id==prev2)) document.getElementById('dsel').value=prev2;
+}
+
+function delNode(id){nodes=nodes.filter(n=>n.id!==id);edges=edges.filter(e=>e.f!==id&&e.t!==id);updateUI();draw();}
+
+function solve(){
+  const si=srcId(),di=dstId();
+  if(!si||!di){showErr('Selecciona origen y destino.');return;}
+  if(si===di){showErr('Origen y destino deben ser distintos.');return;}
+  if(nodes.length<2){showErr('Necesitas al menos 2 nodos.');return;}
+  if(edges.length===0){showErr('Agrega aristas al grafo.');return;}
+  const sn=nodes.find(n=>n.id===si),dn=nodes.find(n=>n.id===di);
+  const adj={};nodes.forEach(n=>{adj[n.id]=[];});
+  edges.forEach(e=>{adj[e.f].push({to:e.t,w:e.w,eid:e.id});adj[e.t].push({to:e.f,w:e.w,eid:e.id});});
+  const dist={},prev={},pe={},vis=new Set();
+  nodes.forEach(n=>{dist[n.id]=Infinity;prev[n.id]=null;pe[n.id]=null;});
+  dist[si]=0;
+  const steps=[{type:'i',msg:`Inicializar: dist(${sn.label})=0, resto=∞`}];
+  let pq=[...nodes];
+  while(pq.length){
+    pq.sort((a,b)=>dist[a.id]-dist[b.id]);
+    const u=pq.shift();
+    if(dist[u.id]===Infinity)break;
+    vis.add(u.id);
+    const un=nodes.find(n=>n.id===u.id);
+    steps.push({type:'v',msg:`Visitar <b>${un.label}</b> — dist=${dist[u.id]}`});
+    if(u.id===di)break;
+    adj[u.id].forEach(eg=>{
+      if(vis.has(eg.to))return;
+      const nd=dist[u.id]+eg.w;
+      const tn=nodes.find(n=>n.id===eg.to);
+      if(nd<dist[eg.to]){
+        dist[eg.to]=nd;prev[eg.to]=u.id;pe[eg.to]=eg.eid;
+        steps.push({type:'r',msg:`  Relajar ${un.label}→${tn.label}: dist=${nd}`});
+      }
+    });
+  }
+  const pN=new Set(),pE=new Set();
+  let c=di;while(c!==null){pN.add(c);if(pe[c])pE.add(pe[c]);c=prev[c];}
+  const ord=[];c=di;while(c!==null){ord.unshift(nodes.find(n=>n.id===c)?.label||'?');c=prev[c];}
+  nodes.forEach(n=>{n.dist=dist[n.id];});
+  pathEdges=pE;pathNodes=pN;visitedNodes=vis;
+  draw();showResults(sn,dn,ord,dist[di],dist,steps,pN);
+}
+
+function showResults(sn,dn,ord,total,dist,steps,pN){
+  const rows=nodes.map(n=>`<tr class="${pN.has(n.id)?'pr':''}"><td><b>${n.label}</b></td><td class="val ${dist[n.id]===Infinity?'inf':''}">${dist[n.id]===Infinity?'∞':dist[n.id]}</td><td>${pN.has(n.id)?'<span style="color:#3ecf8e">●</span>':'<span style="color:#4a5568">○</span>'}</td></tr>`).join('');
+  const pnodes=ord.map((l,i)=>`${i>0?'<span class="parrow">→</span>':''}<span class="pnode">${l}</span>`).join('');
+  const sts=steps.map((s,i)=>`<div class="step-it${s.type==='v'?' vis':''}">${i+1}. ${s.msg}</div>`).join('');
+  const inf=total===Infinity;
+  document.getElementById('rcol').innerHTML=`
+    ${inf?`<div class="err-box">Sin ruta entre ${sn.label} y ${dn.label}.</div>`:`
+    <div class="path-box">
+      <div class="pt">Ruta óptima</div>
+      <div class="path-nodes">${pnodes}</div>
+      <div class="pcost">Costo total: <span>${total}</span></div>
+    </div>`}
+    <div><div class="ptitle" style="margin-bottom:6px">Distancias desde ${sn.label}</div>
+    <table class="dtable"><thead><tr><th>Nodo</th><th>Dist.</th><th>Ruta</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="steps-list"><div class="ptitle" style="margin-bottom:6px">Pasos del algoritmo</div>${sts}</div>
+  `;
+}
+
+function showErr(m){document.getElementById('rcol').innerHTML=`<div class="err-box">${m}</div>`;}
+function clearRes(){pathEdges=new Set();pathNodes=new Set();visitedNodes=new Set();nodes.forEach(n=>delete n.dist);document.getElementById('rcol').innerHTML='<div class="rempty">Construye el grafo arriba, elige origen y destino, y presiona <b style="color:var(--tx2)">Calcular</b>.</div>';draw();}
+function clearAll(){nodes=[];edges=[];nc=0;edgeStart=null;clearRes();updateUI();draw();}
+
+function loadExample(){
+  clearAll();
+  const W=cvs.width,H=cvs.height,cx=W/2,cy=H/2;
+  const pos=[{x:cx-210,y:cy},{x:cx-70,y:cy-95},{x:cx-70,y:cy+95},{x:cx+70,y:cy-95},{x:cx+70,y:cy+95},{x:cx+210,y:cy}];
+  pos.forEach(p=>{nodes.push({id:++nc,label:nextLabel(),x:p.x,y:p.y});});
+  const ids=nodes.map(n=>n.id);
+  [[0,1,4],[0,2,2],[1,2,1],[1,3,5],[2,4,5],[1,4,2],[3,4,1],[3,5,2],[4,5,3]].forEach(([a,b,w])=>{
+    edges.push({f:ids[a],t:ids[b],w,id:Date.now()+Math.random()});
+  });
+  setTimeout(()=>{document.getElementById('ssel').value=ids[0];document.getElementById('dsel').value=ids[5];updateUI();draw();},30);
+  updateUI();draw();
+}
+
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.arcTo(x+w,y,x+w,y+r,r);
+    this.lineTo(x+w,y+h-r);this.arcTo(x+w,y+h,x+w-r,y+h,r);
+    this.lineTo(x+r,y+h);this.arcTo(x,y+h,x,y+h-r,r);this.lineTo(x,y+r);this.arcTo(x,y,x+r,y,r);this.closePath();
+  }
+}
+
+document.getElementById('ssel').addEventListener('change',()=>{updateUI();draw();});
+document.getElementById('dsel').addEventListener('change',()=>{updateUI();draw();});
+setMode('node');
+</script>

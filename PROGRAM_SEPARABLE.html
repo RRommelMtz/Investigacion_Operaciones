@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programación Separable</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f1117;--ink2:#3a3d4a;--ink3:#6b7080;--paper:#fafaf7;--paper2:#f0efe8;--paper3:#e5e3d8;--accent:#1a472a;--accent2:#2d6a4f;--accent3:#52b788;--accent-light:#d8f3dc;--amber:#b5530e;--amber-light:#fef0e0;--blue:#1e3a5f;--blue-light:#dbeafe;--red:#7f1d1d;--red-light:#fee2e2;--gold:#92400e;--gold-light:#fef3c7;--border:rgba(15,17,23,0.12);--shadow:0 2px 16px rgba(15,17,23,0.08);--radius:4px;--radius-lg:10px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.7;}
+header{background:var(--accent);color:#fff;padding:2.5rem 3rem 2rem;position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 30px,rgba(255,255,255,0.025) 30px,rgba(255,255,255,0.025) 31px);}
+header .inner{max-width:980px;margin:0 auto;position:relative;z-index:1;}
+.badge{display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.9);font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:2px;margin-bottom:1rem;}
+header h1{font-family:'DM Serif Display',serif;font-size:clamp(2rem,5vw,3rem);color:#fff;line-height:1.1;margin-bottom:.75rem;font-weight:400;}
+header p{font-size:1rem;color:rgba(255,255,255,0.75);max-width:620px;line-height:1.6;}
+.tabs-bar{background:var(--paper2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.tabs-inner{max-width:980px;margin:0 auto;display:flex;}
+.tab-btn{padding:1rem 1.4rem;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:var(--ink3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:color .2s,border-color .2s;white-space:nowrap;letter-spacing:.02em;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.main{max-width:980px;margin:0 auto;padding:2.5rem 2rem 4rem;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow);}
+.card-accent{border-left:3px solid var(--accent3);}
+.card-amber{border-left:3px solid var(--amber);}
+.card-blue{border-left:3px solid var(--blue);}
+.card-red{border-left:3px solid #dc2626;}
+.card h3{font-family:'DM Serif Display',serif;font-size:1.1rem;font-weight:400;margin-bottom:.75rem;color:var(--ink);}
+.card p,.card li{font-size:14px;color:var(--ink2);line-height:1.65;}
+.card ul{padding-left:1.25rem;}
+.card li{margin-bottom:.35rem;}
+.theory-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+@media(max-width:650px){.theory-grid{grid-template-columns:1fr;}}
+.formula-box{background:var(--paper2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);margin:.75rem 0;line-height:1.8;}
+.step-item{display:flex;gap:1rem;margin-bottom:1.25rem;align-items:flex-start;}
+.step-num{min-width:28px;height:28px;background:var(--accent);color:#fff;border-radius:50%;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:2px;flex-shrink:0;}
+.step-item p{font-size:14px;color:var(--ink2);margin:0;}
+label{display:block;font-size:12px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;margin-top:1rem;}
+label:first-child{margin-top:0;}
+input[type=text],input[type=number],select{width:100%;padding:9px 12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;}
+input:focus,select:focus{border-color:var(--accent3);box-shadow:0 0 0 3px rgba(82,183,136,.15);}
+.help-text{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.5;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:var(--radius);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:background .2s,transform .1s;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-secondary{background:var(--paper2);color:var(--ink);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--paper3);}
+.btn-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.panel-title{font-family:'DM Serif Display',serif;font-size:1.3rem;font-weight:400;margin-bottom:1.25rem;color:var(--ink);}
+.prob-section{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1.5rem;}
+.prob-section-title{font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem;display:flex;align-items:center;gap:8px;}
+.prob-section-title span{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;}
+.var-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;}
+.var-card{background:var(--paper2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;}
+.var-card-title{font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+@media(max-width:500px){.row3{grid-template-columns:1fr;}}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+@media(max-width:500px){.row2{grid-template-columns:1fr;}}
+.bp-table-wrap{overflow-x:auto;}
+.bp-table{width:100%;border-collapse:collapse;font-size:13px;}
+.bp-table th{background:var(--paper2);padding:7px 10px;text-align:center;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--border);}
+.bp-table td{padding:6px 8px;border:1px solid var(--border);text-align:center;font-family:'DM Mono',monospace;}
+.bp-table td.hl{background:var(--accent-light);color:var(--accent);font-weight:600;}
+.results-area{display:none;margin-top:2rem;}
+.results-area.visible{display:block;}
+.result-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.result-header h2{font-family:'DM Serif Display',serif;font-size:1.5rem;font-weight:400;}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:2px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.status-ok{background:var(--accent-light);color:var(--accent);}
+.status-err{background:var(--red-light);color:var(--red);}
+.metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.metric{background:var(--paper2);border-radius:var(--radius);padding:1rem;text-align:center;}
+.metric-label{font-size:11px;font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.metric-val{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:500;color:var(--ink);}
+.metric-val.green{color:var(--accent);}
+.metric-val.blue{color:var(--blue);}
+.metric-val.amber{color:var(--amber);}
+.chart-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1.5rem;}
+.chart-title{font-size:13px;font-weight:600;color:var(--ink3);margin-bottom:1rem;text-transform:uppercase;letter-spacing:.06em;}
+.error-msg{display:none;background:var(--red-light);border:1px solid rgba(127,29,29,.2);border-radius:var(--radius);padding:.75rem 1rem;font-size:13px;color:var(--red);margin-top:1rem;}
+.error-msg.visible{display:block;}
+.info-box{background:var(--blue-light);border-left:3px solid var(--blue);border-radius:var(--radius);padding:.75rem 1rem;font-size:13px;color:var(--blue);margin-bottom:1.25rem;}
+.divider{height:1px;background:var(--border);margin:2rem 0;}
+.tag{display:inline-block;padding:2px 8px;background:var(--paper3);border-radius:2px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink2);}
+.examples-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.ex-btn{padding:7px 14px;background:var(--paper2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;transition:background .15s;}
+.ex-btn:hover{background:var(--paper3);color:var(--ink);}
+.step-section{margin-bottom:.75rem;}
+.step-header{display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:background .15s;user-select:none;}
+.step-header:hover{background:var(--paper2);}
+.step-num2{min-width:32px;height:32px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.step-header-text{flex:1;}
+.step-header-title{font-weight:600;font-size:14px;color:var(--ink);}
+.step-header-sub{font-size:12px;color:var(--ink3);}
+.step-chevron{font-size:12px;color:var(--ink3);transition:transform .2s;}
+.step-section.open .step-chevron{transform:rotate(180deg);}
+.step-body{display:none;padding:1.25rem;background:var(--paper2);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+.step-section.open .step-body{display:block;}
+.step-section.open .step-header{border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
+.optimal-row td{background:var(--accent-light)!important;font-weight:600;color:var(--accent);}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--paper2);}
+::-webkit-scrollbar-thumb{background:var(--paper3);border-radius:3px;}
+@media(max-width:500px){.main{padding:1.5rem 1rem 3rem;}header{padding:2rem 1.25rem 1.5rem;}.tabs-inner{overflow-x:auto;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <div class="badge">Investigación de Operaciones</div>
+    <h1>Programación Separable</h1>
+    <p>Solver multivariable — Z = f<sub>1</sub>(x<sub>1</sub>) + f<sub>2</sub>(x<sub>2</sub>) sujeto a restricciones lineales. Linearización por tramos (PWL) con desarrollo paso a paso.</p>
+  </div>
+</header>
+<div class="tabs-bar">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="showTab('solver',this)">⚙️ Solucionador</button>
+    <button class="tab-btn" onclick="showTab('theory',this)">📚 Teoría</button>
+    <button class="tab-btn" onclick="showTab('graph',this)">📈 Gráfica</button>
+  </div>
+</div>
+<div class="main">
+
+<!-- SOLVER -->
+<div id="tab-solver" class="tab-panel active">
+  <p style="font-size:13px;color:var(--ink3);margin-bottom:.75rem;">Ejemplos prediseñados:</p>
+  <div class="examples-row">
+    <button class="ex-btn" onclick="loadExample(0)">📘 Ejercicio 4: 20x₁-x₁²+16x₂-2x₂², x₁+x₂≤8</button>
+    <button class="ex-btn" onclick="loadExample(1)">📗 Ej 2: 2x₁-x₁²+4x₂-x₂², x₁+x₂≤3</button>
+    <button class="ex-btn" onclick="loadExample(2)">📙 Ej 3: √x₁+ln(x₂+1), x₁+2x₂≤10</button>
+  </div>
+
+  <div class="prob-section">
+    <div class="prob-section-title"><span>1</span> Función objetivo separable Z = f₁(x₁) + f₂(x₂)</div>
+    <div class="info-box">Ingresa cada función en términos de <strong>x</strong> (su propia variable). Usa sintaxis JS: <code>Math.sqrt(x)</code>, <code>Math.log(x)</code>, <code>x*x</code>, etc.</div>
+    <div class="row2" style="margin-bottom:1rem;">
+      <div>
+        <label>Tipo de optimización</label>
+        <select id="opt-type">
+          <option value="max">Maximizar Z</option>
+          <option value="min">Minimizar Z</option>
+        </select>
+      </div>
+      <div>
+        <label>Segmentos por variable (k)</label>
+        <input type="number" id="n-segs" value="4" min="2" max="30">
+        <p class="help-text">Más segmentos = mayor precisión</p>
+      </div>
+    </div>
+    <div class="var-grid" id="fn-cards"></div>
+  </div>
+
+  <div class="prob-section">
+    <div class="prob-section-title"><span>2</span> Restricciones</div>
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:1rem;">Formato: a₁·x₁ + a₂·x₂ ≤ b (no negatividad x₁,x₂ ≥ 0 se asume automáticamente)</p>
+    <div id="constraints-area"></div>
+    <button class="btn btn-secondary" onclick="addConstraint()" style="font-size:12px;padding:6px 14px;margin-top:.5rem;">+ Agregar restricción</button>
+  </div>
+
+  <div id="error-msg" class="error-msg"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="solve()">▶ Resolver</button>
+    <button class="btn btn-secondary" onclick="loadExample(0)">↺ Recargar ejemplo</button>
+  </div>
+
+  <div id="results-area" class="results-area">
+    <div class="divider"></div>
+    <div class="result-header">
+      <h2>Solución óptima</h2>
+      <span id="result-status" class="status-badge"></span>
+    </div>
+    <div class="metrics-row" id="metrics-row"></div>
+    <h3 style="font-family:'DM Serif Display',serif;font-weight:400;font-size:1.2rem;margin-bottom:1rem;">Desarrollo paso a paso</h3>
+    <div id="steps-accordion"></div>
+    <div class="chart-wrap" style="margin-top:1.5rem;">
+      <div class="chart-title">f₁(x₁) y f₂(x₂) — función real vs aproximación PWL</div>
+      <canvas id="result-canvas" height="300"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- THEORY -->
+<div id="tab-theory" class="tab-panel">
+  <div class="theory-grid">
+    <div class="card card-accent">
+      <h3>¿Qué es la Programación Separable?</h3>
+      <p>Un problema es <strong>separable</strong> cuando f(x) se puede escribir como suma de funciones de una sola variable:</p>
+      <div class="formula-box">Z = f₁(x₁) + f₂(x₂) + … + fₙ(xₙ)</div>
+      <p>Esto permite linearizar cada fⱼ de forma <em>independiente</em> y resolver con Programación Lineal.</p>
+    </div>
+    <div class="card card-blue">
+      <h3>Forma estándar</h3>
+      <p><strong>Maximizar:</strong></p>
+      <div class="formula-box">Z = Σⱼ fⱼ(xⱼ)</div>
+      <p><strong>Sujeto a:</strong></p>
+      <div class="formula-box">Σⱼ aᵢⱼ xⱼ ≤ bᵢ  ∀i<br>xⱼ ≥ 0</div>
+    </div>
+    <div class="card card-amber">
+      <h3>Linearización PWL</h3>
+      <p>Para cada fⱼ(xⱼ) se definen k+1 puntos de quiebre y ponderaciones λ:</p>
+      <div class="formula-box">xⱼ = Σₖ aⱼₖ·λⱼₖ<br>fⱼ(xⱼ) ≈ Σₖ fⱼ(aⱼₖ)·λⱼₖ</div>
+      <p>Con: λⱼₖ ≥ 0, Σₖ λⱼₖ = 1 y condición <strong>SOS2</strong>.</p>
+    </div>
+    <div class="card card-red">
+      <h3>Condición SOS2</h3>
+      <p>A lo más <strong>dos variables λ adyacentes</strong> pueden ser positivas simultáneamente, garantizando que la aproximación corresponde a un único segmento activo.</p>
+      <p style="margin-top:.5rem;font-size:13px;color:var(--ink3);">Para funciones cóncavas (maximización), SOS2 se cumple automáticamente en Simplex.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3>Ejemplo — Ejercicio 4 del curso</h3>
+    <div class="step-item"><div class="step-num">1</div><p><strong>Separabilidad:</strong> Z = (20x₁ − x₁²) + (16x₂ − 2x₂²). Cada término depende de una sola variable ✓</p></div>
+    <div class="step-item"><div class="step-num">2</div><p><strong>Puntos de quiebre</strong> para x₁, x₂ ∈ [0,8]: se eligen 0, 2, 4, 6, 8 (k=4 segmentos)</p></div>
+    <div class="step-item"><div class="step-num">3</div><p><strong>Evaluar:</strong> f₁(0)=0, f₁(2)=36, f₁(4)=64, f₁(6)=84, f₁(8)=96 · f₂(0)=0, f₂(2)=24, f₂(4)=32, f₂(6)=24, f₂(8)=0</p></div>
+    <div class="step-item"><div class="step-num">4</div><p><strong>PL equivalente:</strong> maximizar Σ fⱼ(aⱼₖ)·λⱼₖ, sujeto a Σ aⱼₖ·λⱼₖ satisface x₁+x₂≤8, Σλ=1, SOS2</p></div>
+    <div class="step-item"><div class="step-num">5</div><p><strong>Óptimo:</strong> x₁*=10, x₂*=4 → Z*=164 (el solucionador lo obtiene automáticamente)</p></div>
+  </div>
+</div>
+
+<!-- GRAPH -->
+<div id="tab-graph" class="tab-panel">
+  <h2 class="panel-title">Visualizador de linearización</h2>
+  <div class="info-box">Observa cómo la aproximación PWL se acerca a la función real al aumentar el número de segmentos.</div>
+  <div class="row3" style="margin-bottom:1.5rem;">
+    <div>
+      <label>f₁(x₁) — función de x</label>
+      <input type="text" id="g-fn1" value="20*x - x*x">
+    </div>
+    <div>
+      <label>f₂(x₂) — función de x</label>
+      <input type="text" id="g-fn2" value="16*x - 2*x*x">
+    </div>
+    <div>
+      <label>Segmentos k = <strong id="g-sv">5</strong></label>
+      <input type="range" id="g-segs" min="2" max="20" value="5" oninput="document.getElementById('g-sv').textContent=this.value;updateGraph()">
+    </div>
+  </div>
+  <div class="row2" style="margin-bottom:1.5rem;">
+    <div>
+      <label>Rango x₁</label>
+      <div style="display:flex;gap:8px;"><input type="number" id="g-min1" value="0" style="width:50%;" oninput="updateGraph()"><input type="number" id="g-max1" value="8" style="width:50%;" oninput="updateGraph()"></div>
+    </div>
+    <div>
+      <label>Rango x₂</label>
+      <div style="display:flex;gap:8px;"><input type="number" id="g-min2" value="0" style="width:50%;" oninput="updateGraph()"><input type="number" id="g-max2" value="8" style="width:50%;" oninput="updateGraph()"></div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="updateGraph()" style="margin-bottom:1.5rem;">Actualizar</button>
+  <div class="chart-wrap"><div class="chart-title">f₁(x₁) — real vs PWL</div><canvas id="gc1" height="240"></canvas></div>
+  <div class="chart-wrap"><div class="chart-title">f₂(x₂) — real vs PWL</div><canvas id="gc2" height="240"></canvas></div>
+  <div class="metrics-row">
+    <div class="metric"><div class="metric-label">Error máx. f₁</div><div class="metric-val" id="g-e1">—</div></div>
+    <div class="metric"><div class="metric-label">Error máx. f₂</div><div class="metric-val" id="g-e2">—</div></div>
+    <div class="metric"><div class="metric-label">Segmentos</div><div class="metric-val" id="g-sk">—</div></div>
+    <div class="metric"><div class="metric-label">Puntos quiebre</div><div class="metric-val" id="g-bk">—</div></div>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+function evalFn(expr,x){try{return Function('x','return('+expr+')')(x);}catch(e){return NaN;}}
+function linspace(a,b,n){const r=[];for(let i=0;i<n;i++)r.push(a+(b-a)*i/(n-1));return r;}
+function showError(m){const e=document.getElementById('error-msg');e.textContent=m;e.classList.add('visible');}
+function clearError(){document.getElementById('error-msg').classList.remove('visible');}
+function fmt(v,d=4){return (v===null||isNaN(v))?'—':Number(v).toFixed(d);}
+
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='graph')setTimeout(updateGraph,100);
+}
+
+let constraints=[];
+
+function renderFnCards(fns,mins,maxs){
+  const colors=['var(--accent)','var(--blue)'];
+  const names=['x\u2081','x\u2082'];
+  let html='';
+  for(let j=0;j<2;j++){
+    html+=`<div class="var-card" style="border-top:3px solid ${colors[j]}">
+      <div class="var-card-title">f${j+1}(${names[j]})</div>
+      <label>Expresi\u00f3n en x</label>
+      <input type="text" id="fn${j}" value="${fns[j]||''}" placeholder="ej: 20*x - x*x">
+      <label style="margin-top:.75rem;">Rango [a, b]</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="mn${j}" value="${mins[j]||0}" style="width:50%;">
+        <input type="number" id="mx${j}" value="${maxs[j]||8}" style="width:50%;">
+      </div>
+    </div>`;
+  }
+  document.getElementById('fn-cards').innerHTML=html;
+}
+
+function renderConstraints(){
+  let html='';
+  constraints.forEach((c,i)=>{
+    html+=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--ink3);min-width:28px;font-weight:600;">C${i+1}:</span>
+      <input type="number" id="ca0_${i}" value="${c.a0}" style="width:60px;margin:0;" step="0.1">
+      <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--ink3);">x\u2081 +</span>
+      <input type="number" id="ca1_${i}" value="${c.a1}" style="width:60px;margin:0;" step="0.1">
+      <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--ink3);">x\u2082</span>
+      <select id="cs_${i}" style="width:65px;margin:0;padding:9px 4px;">
+        <option value="le" ${c.sign==='le'?'selected':''}>&#8804;</option>
+        <option value="ge" ${c.sign==='ge'?'selected':''}>&#8805;</option>
+        <option value="eq" ${c.sign==='eq'?'selected':''}>=</option>
+      </select>
+      <input type="number" id="cb_${i}" value="${c.b}" style="width:75px;margin:0;" step="0.1">
+      <button onclick="removeConstraint(${i})" style="background:var(--red-light);color:var(--red);border:none;border-radius:3px;padding:5px 9px;cursor:pointer;font-size:12px;">&#10005;</button>
+    </div>`;
+  });
+  document.getElementById('constraints-area').innerHTML=html;
+}
+
+function addConstraint(){constraints.push({a0:1,a1:1,sign:'le',b:8});renderConstraints();}
+function removeConstraint(i){constraints.splice(i,1);renderConstraints();}
+
+function readConstraints(){
+  return constraints.map((c,i)=>({
+    a0:parseFloat(document.getElementById(`ca0_${i}`).value)||0,
+    a1:parseFloat(document.getElementById(`ca1_${i}`).value)||0,
+    sign:document.getElementById(`cs_${i}`).value,
+    b:parseFloat(document.getElementById(`cb_${i}`).value)||0
+  }));
+}
+
+const EXAMPLES=[
+  {fns:['20*x - x*x','16*x - 2*x*x'],mins:[0,0],maxs:[8,8],cons:[{a0:1,a1:1,sign:'le',b:8}],opt:'max',k:4},
+  {fns:['2*x - x*x','4*x - x*x'],mins:[0,0],maxs:[3,3],cons:[{a0:1,a1:1,sign:'le',b:3}],opt:'max',k:3},
+  {fns:['Math.sqrt(x)','Math.log(x+1)'],mins:[0,0],maxs:[10,10],cons:[{a0:1,a1:2,sign:'le',b:10}],opt:'max',k:5}
+];
+
+function loadExample(idx){
+  clearError();
+  const ex=EXAMPLES[idx];
+  document.getElementById('opt-type').value=ex.opt;
+  document.getElementById('n-segs').value=ex.k;
+  constraints=ex.cons.map(c=>({...c}));
+  renderFnCards(ex.fns,ex.mins,ex.maxs);
+  renderConstraints();
+  document.getElementById('results-area').classList.remove('visible');
+}
+
+let rChart=null;
+
+function solve(){
+  clearError();
+  const opt=document.getElementById('opt-type').value;
+  const k=parseInt(document.getElementById('n-segs').value)||4;
+  const fn0=document.getElementById('fn0')?.value?.trim();
+  const fn1=document.getElementById('fn1')?.value?.trim();
+  const mn0=parseFloat(document.getElementById('mn0')?.value);
+  const mx0=parseFloat(document.getElementById('mx0')?.value);
+  const mn1=parseFloat(document.getElementById('mn1')?.value);
+  const mx1=parseFloat(document.getElementById('mx1')?.value);
+
+  if(!fn0||!fn1){showError('Ingresa ambas funciones f\u2081 y f\u2082.');return;}
+  if(isNaN(mn0)||isNaN(mx0)||mn0>=mx0){showError('Rango inv\u00e1lido para x\u2081.');return;}
+  if(isNaN(mn1)||isNaN(mx1)||mn1>=mx1){showError('Rango inv\u00e1lido para x\u2082.');return;}
+  if(k<2){showError('Segmentos debe ser \u2265 2.');return;}
+  const cons=readConstraints();
+  if(!cons.length){showError('Agrega al menos una restricci\u00f3n.');return;}
+
+  const pts0=linspace(mn0,mx0,k+1);
+  const pts1=linspace(mn1,mx1,k+1);
+  const fv0=pts0.map(x=>evalFn(fn0,x));
+  const fv1=pts1.map(x=>evalFn(fn1,x));
+  if(fv0.some(v=>isNaN(v))){showError('f\u2081(x) produce NaN en el rango. Revisa la expresi\u00f3n.');return;}
+  if(fv1.some(v=>isNaN(v))){showError('f\u2082(x) produce NaN en el rango. Revisa la expresi\u00f3n.');return;}
+
+  // Buscar \u00f3ptimo por enumeraci\u00f3n fina sobre segmentos
+  const FINE=300;
+  let bestZ=opt==='max'?-Infinity:Infinity;
+  let bx0=null,bx1=null,bF0=null,bF1=null,bL0=null,bL1=null;
+
+  for(let s0=0;s0<k;s0++){
+    for(let s1=0;s1<k;s1++){
+      for(let i=0;i<=FINE;i++){
+        const t0=i/FINE;
+        const x0=pts0[s0]+t0*(pts0[s0+1]-pts0[s0]);
+        const f0=fv0[s0]+t0*(fv0[s0+1]-fv0[s0]);
+        for(let j=0;j<=FINE;j++){
+          const t1=j/FINE;
+          const x1=pts1[s1]+t1*(pts1[s1+1]-pts1[s1]);
+          const f1=fv1[s1]+t1*(fv1[s1+1]-fv1[s1]);
+          // Check constraints
+          let ok=true;
+          for(const c of cons){
+            const lhs=c.a0*x0+c.a1*x1;
+            if(c.sign==='le'&&lhs>c.b+1e-9){ok=false;break;}
+            if(c.sign==='ge'&&lhs<c.b-1e-9){ok=false;break;}
+            if(c.sign==='eq'&&Math.abs(lhs-c.b)>1e-6){ok=false;break;}
+          }
+          if(!ok) continue;
+          const Z=f0+f1;
+          if(opt==='max'?Z>bestZ:Z<bestZ){
+            bestZ=Z;bx0=x0;bx1=x1;bF0=f0;bF1=f1;
+            const l0=new Array(k+1).fill(0);l0[s0]=1-t0;l0[s0+1]=t0;
+            const l1=new Array(k+1).fill(0);l1[s1]=1-t1;l1[s1+1]=t1;
+            bL0=[...l0];bL1=[...l1];
+          }
+        }
+      }
+    }
+  }
+
+  if(bx0===null){showError('No se encontr\u00f3 soluci\u00f3n factible. Revisa restricciones y rangos.');return;}
+
+  document.getElementById('results-area').classList.add('visible');
+  const st=document.getElementById('result-status');
+  st.textContent='\u00d3PTIMO ENCONTRADO';
+  st.className='status-badge status-ok';
+
+  // M\u00e9tricas
+  const cVals=readConstraints().map(c=>c.a0*bx0+c.a1*bx1);
+  let mh=`<div class="metric"><div class="metric-label">Z* \u00f3ptimo</div><div class="metric-val green">${fmt(bestZ)}</div></div>
+    <div class="metric"><div class="metric-label">x\u2081*</div><div class="metric-val blue">${fmt(bx0)}</div></div>
+    <div class="metric"><div class="metric-label">x\u2082*</div><div class="metric-val blue">${fmt(bx1)}</div></div>
+    <div class="metric"><div class="metric-label">f\u2081(x\u2081*)</div><div class="metric-val">${fmt(bF0)}</div></div>
+    <div class="metric"><div class="metric-label">f\u2082(x\u2082*)</div><div class="metric-val">${fmt(bF1)}</div></div>`;
+  cons.forEach((c,i)=>{
+    const lhs=c.a0*bx0+c.a1*bx1;
+    const slack=c.sign==='le'?c.b-lhs:lhs-c.b;
+    mh+=`<div class="metric"><div class="metric-label">Holgura C${i+1}</div><div class="metric-val ${Math.abs(slack)<0.01?'green':'amber'}">${fmt(slack,3)}</div></div>`;
+  });
+  document.getElementById('metrics-row').innerHTML=mh;
+
+  // Accordion pasos
+  const acc=document.getElementById('steps-accordion');
+  acc.innerHTML='';
+
+  // PASO 1 — Puntos de quiebre
+  let p1='<p style="font-size:13px;color:var(--ink2);margin-bottom:.75rem;">Se generan k+'+1+' puntos de quiebre igualmente espaciados en cada rango:</p>';
+  ['f\u2081(x\u2081)','f\u2082(x\u2082)'].forEach((lab,j)=>{
+    const pts=j===0?pts0:pts1, fv=j===0?fv0:fv1, bL=j===0?bL0:bL1;
+    p1+=`<p style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem;">${lab}</p>
+    <div class="bp-table-wrap"><table class="bp-table"><thead><tr><th>k</th><th>a<sub>k</sub></th><th>${lab.replace('(x','(a')}</th><th>Activo</th></tr></thead><tbody>`;
+    for(let i=0;i<=k;i++){
+      const act=bL[i]>0.001;
+      p1+=`<tr><td>${i}</td><td class="${act?'hl':''}">${fmt(pts[i],4)}</td><td class="${act?'hl':''}">${fmt(fv[i],4)}</td><td>${act?'<strong style="color:var(--accent)">&#9733;</strong>':''}</td></tr>`;
+    }
+    p1+='</tbody></table></div>';
+  });
+  addStep(acc,'1','Puntos de quiebre y evaluaci\u00f3n',`k = ${k} segmentos por variable`,p1);
+
+  // PASO 2 — Lambda
+  let p2=`<p style="font-size:13px;color:var(--ink2);margin-bottom:.75rem;">Las ponderaciones \u03bbk satisfacen: \u03a3\u03bbk = 1, \u03bbk \u2265 0 y condici\u00f3n SOS2 (a lo m\u00e1s 2 adyacentes activas).</p>`;
+  ['x\u2081','x\u2082'].forEach((vn,j)=>{
+    const pts=j===0?pts0:pts1, fv=j===0?fv0:fv1, bL=j===0?bL0:bL1;
+    let sumX=0,sumF=0;
+    bL.forEach((l,i)=>{sumX+=pts[i]*l;sumF+=fv[i]*l;});
+    p2+=`<p style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem;">${vn}* = ${fmt(j===0?bx0:bx1,4)}</p>
+    <div class="bp-table-wrap"><table class="bp-table"><thead><tr><th>k</th><th>a<sub>k</sub></th><th>\u03bb<sub>k</sub></th><th>a<sub>k</sub>\u00b7\u03bb<sub>k</sub></th><th>f\u00b7\u03bb<sub>k</sub></th></tr></thead><tbody>`;
+    bL.forEach((l,i)=>{
+      const act=l>0.001;
+      p2+=`<tr ${act?'class="optimal-row"':''}><td>${i}</td><td>${fmt(pts[i],4)}</td><td>${fmt(l,4)}${act?' \u2605':''}</td><td>${fmt(pts[i]*l,4)}</td><td>${fmt(fv[i]*l,4)}</td></tr>`;
+    });
+    p2+=`<tr style="background:var(--paper3)!important;"><td colspan="2"><strong>\u03a3</strong></td><td><strong>1.0000</strong></td><td><strong>${fmt(sumX,4)}</strong></td><td><strong>${fmt(sumF,4)}</strong></td></tr></tbody></table></div>`;
+  });
+  addStep(acc,'2','Ponderaciones \u03bb (SOS2)','Variables de linearizaci\u00f3n y contribuciones',p2);
+
+  // PASO 3 — Restricciones
+  const signLabels={le:'\u2264',ge:'\u2265',eq:'='};
+  let p3='';
+  readConstraints().forEach((c,i)=>{
+    const lhs=c.a0*bx0+c.a1*bx1;
+    const ok=(c.sign==='le'&&lhs<=c.b+1e-6)||(c.sign==='ge'&&lhs>=c.b-1e-6)||(c.sign==='eq'&&Math.abs(lhs-c.b)<1e-6);
+    const slack=c.sign==='le'?c.b-lhs:lhs-c.b;
+    p3+=`<div style="background:${ok?'var(--accent-light)':'var(--red-light)'};border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:.5rem;font-size:13px;color:${ok?'var(--accent)':'var(--red)'};">
+      <strong>C${i+1}:</strong> ${fmt(c.a0,2)}\u00b7${fmt(bx0,4)} + ${fmt(c.a1,2)}\u00b7${fmt(bx1,4)} = ${fmt(lhs,4)} ${signLabels[c.sign]} ${c.b} &nbsp; ${ok?'\u2713 CUMPLE':'\u2717 VIOLA'} (holgura = ${fmt(slack,4)})
+    </div>`;
+  });
+  addStep(acc,'3','Verificaci\u00f3n de restricciones','Factibilidad en la soluci\u00f3n \u00f3ptima',p3);
+
+  // PASO 4 — Resumen
+  let p4=`<div style="background:var(--accent-light);border-radius:var(--radius);padding:1.25rem;font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);line-height:2;">
+    x\u2081* = ${fmt(bx0,4)}<br>x\u2082* = ${fmt(bx1,4)}<br>
+    f\u2081(x\u2081*) = ${fmt(bF0,4)}<br>f\u2082(x\u2082*) = ${fmt(bF1,4)}<br>
+    <strong style="font-size:1rem;">Z* = ${fmt(bF0,4)} + ${fmt(bF1,4)} = ${fmt(bestZ,4)}</strong>
+  </div>`;
+  addStep(acc,'4','Soluci\u00f3n final','Z* = f\u2081(x\u2081*) + f\u2082(x\u2082*)',p4,true);
+
+  // Gr\u00e1fica
+  const xd0=linspace(mn0,mx0,300);
+  const xd1=linspace(mn1,mx1,300);
+  function pwlVal(x,pts,fv){
+    let seg=pts.findIndex((p,i)=>i<k&&x>=p&&x<=pts[i+1]);
+    if(seg<0)return fv[fv.length-1];
+    const t=(x-pts[seg])/(pts[seg+1]-pts[seg]);
+    return fv[seg]+t*(fv[seg+1]-fv[seg]);
+  }
+  const yr0=xd0.map(x=>evalFn(fn0,x));
+  const yp0=xd0.map(x=>pwlVal(x,pts0,fv0));
+  const yr1=xd1.map(x=>evalFn(fn1,x));
+  const yp1=xd1.map(x=>pwlVal(x,pts1,fv1));
+
+  const ctx=document.getElementById('result-canvas').getContext('2d');
+  if(rChart)rChart.destroy();
+  rChart=new Chart(ctx,{
+    type:'line',
+    data:{datasets:[
+      {label:'f\u2081(x\u2081) real',data:xd0.map((x,i)=>({x,y:yr0[i]})),borderColor:'#1a472a',borderWidth:2.5,pointRadius:0,tension:0.4,fill:false,xAxisID:'x0',yAxisID:'y0'},
+      {label:'f\u2081 PWL',data:xd0.map((x,i)=>({x,y:yp0[i]})),borderColor:'#52b788',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0,fill:false,xAxisID:'x0',yAxisID:'y0'},
+      {label:`x\u2081*=${fmt(bx0,3)}`,data:[{x:bx0,y:bF0}],type:'scatter',borderColor:'#1a472a',backgroundColor:'#1a472a',pointRadius:9,xAxisID:'x0',yAxisID:'y0'},
+      {label:'f\u2082(x\u2082) real',data:xd1.map((x,i)=>({x,y:yr1[i]})),borderColor:'#1e3a5f',borderWidth:2.5,pointRadius:0,tension:0.4,fill:false,xAxisID:'x1',yAxisID:'y1'},
+      {label:'f\u2082 PWL',data:xd1.map((x,i)=>({x,y:yp1[i]})),borderColor:'#4a90d9',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0,fill:false,xAxisID:'x1',yAxisID:'y1'},
+      {label:`x\u2082*=${fmt(bx1,3)}`,data:[{x:bx1,y:bF1}],type:'scatter',borderColor:'#1e3a5f',backgroundColor:'#1e3a5f',pointRadius:9,xAxisID:'x1',yAxisID:'y1'}
+    ]},
+    options:{responsive:true,plugins:{legend:{labels:{font:{family:'Outfit',size:12},color:'#3a3d4a'}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(4)}`}}},
+    scales:{
+      x0:{type:'linear',display:true,title:{display:true,text:'x\u2081',color:'#1a472a'},grid:{color:'rgba(15,17,23,0.06)'},ticks:{color:'#6b7080',font:{size:11}}},
+      x1:{type:'linear',display:false},
+      y0:{type:'linear',display:true,position:'left',title:{display:true,text:'f\u2081',color:'#1a472a'},ticks:{color:'#1a472a',font:{size:11}},grid:{color:'rgba(15,17,23,0.06)'}},
+      y1:{type:'linear',display:true,position:'right',title:{display:true,text:'f\u2082',color:'#1e3a5f'},ticks:{color:'#1e3a5f',font:{size:11}},grid:{drawOnChartArea:false}}
+    }}
+  });
+
+  setTimeout(()=>document.getElementById('results-area').scrollIntoView({behavior:'smooth',block:'start'}),200);
+}
+
+function addStep(container,num,title,sub,content,open=false){
+  const div=document.createElement('div');
+  div.className='step-section'+(open?' open':'');
+  div.innerHTML=`<div class="step-header" onclick="this.parentElement.classList.toggle('open')">
+    <div class="step-num2">${num}</div>
+    <div class="step-header-text"><div class="step-header-title">${title}</div><div class="step-header-sub">${sub}</div></div>
+    <span class="step-chevron">\u25bc</span>
+  </div><div class="step-body">${content}</div>`;
+  container.appendChild(div);
+}
+
+let gc1=null,gc2=null;
+function updateGraph(){
+  const fn1=document.getElementById('g-fn1')?.value||'20*x-x*x';
+  const fn2=document.getElementById('g-fn2')?.value||'16*x-2*x*x';
+  const k=parseInt(document.getElementById('g-segs')?.value)||5;
+  const a1=parseFloat(document.getElementById('g-min1')?.value)||0;
+  const b1=parseFloat(document.getElementById('g-max1')?.value)||8;
+  const a2=parseFloat(document.getElementById('g-min2')?.value)||0;
+  const b2=parseFloat(document.getElementById('g-max2')?.value)||8;
+
+  function build(fn,a,b){
+    const pts=linspace(a,b,k+1);
+    const fv=pts.map(x=>evalFn(fn,x));
+    const xd=linspace(a,b,300);
+    const yr=xd.map(x=>evalFn(fn,x));
+    const yp=xd.map(x=>{
+      let seg=pts.findIndex((p,i)=>i<k&&x>=p&&x<=pts[i+1]);
+      if(seg<0)return fv[fv.length-1];
+      const t=(x-pts[seg])/(pts[seg+1]-pts[seg]);
+      return fv[seg]+t*(fv[seg+1]-fv[seg]);
+    });
+    let me=0;yr.forEach((v,i)=>{const e=Math.abs(v-yp[i]);if(e>me)me=e;});
+    return{xd,yr,yp,pts,fv,me};
+  }
+
+  const d1=build(fn1,a1,b1),d2=build(fn2,a2,b2);
+  document.getElementById('g-e1').textContent=d1.me.toFixed(4);
+  document.getElementById('g-e2').textContent=d2.me.toFixed(4);
+  document.getElementById('g-sk').textContent=k;
+  document.getElementById('g-bk').textContent=k+1;
+
+  function drawG(cid,d,color,colorD,fn){
+    const ctx=document.getElementById(cid)?.getContext('2d');
+    if(!ctx)return null;
+    return new Chart(ctx,{type:'line',data:{datasets:[
+      {label:`f = ${fn}`,data:d.xd.map((x,i)=>({x,y:d.yr[i]})),borderColor:color,borderWidth:2.5,pointRadius:0,tension:0.4,fill:false},
+      {label:'PWL',data:d.xd.map((x,i)=>({x,y:d.yp[i]})),borderColor:colorD,borderWidth:2,borderDash:[5,4],pointRadius:0,tension:0,fill:false},
+      {label:'Quiebres',data:d.pts.map((x,i)=>({x,y:d.fv[i]})),type:'scatter',borderColor:color,backgroundColor:color,pointRadius:6,showLine:false}
+    ]},options:{responsive:true,plugins:{legend:{labels:{font:{family:'Outfit',size:12},color:'#3a3d4a'}}},scales:{x:{type:'linear',ticks:{color:'#6b7080',font:{size:11}},grid:{color:'rgba(15,17,23,0.06)'}},y:{ticks:{color:'#6b7080',font:{size:11}},grid:{color:'rgba(15,17,23,0.06)'}}}}});
+  }
+
+  if(gc1)gc1.destroy();if(gc2)gc2.destroy();
+  gc1=drawG('gc1',d1,'#1a472a','#52b788',fn1);
+  gc2=drawG('gc2',d2,'#1e3a5f','#4a90d9',fn2);
+}
+
+window.addEventListener('load',()=>loadExample(0));
+</script>
+</body>
+</html>

@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método Simplex</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #2a2f42;
+    --accent: #f0c040;
+    --accent2: #e07b3c;
+    --green: #4ecb8d;
+    --red: #e05c5c;
+    --blue: #5c9ce0;
+    --purple: #a78bfa;
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Playfair Display', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,192,64,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,192,64,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(240,192,64,0.1);
+    border: 1px solid rgba(240,192,64,0.3);
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #f0c040 0%, #e07b3c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 300;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: rgba(240,192,64,0.3); }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover::before { opacity: 1; }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* FORM ELEMENTS */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  input[type="number"], input[type="text"], select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 10px 12px;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,192,64,0.1);
+  }
+  select { cursor: pointer; }
+  select option { background: var(--surface2); }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0d0f14;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(240,192,64,0.3);
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn-danger {
+    background: transparent;
+    border: 1px solid rgba(224,92,92,0.3);
+    color: var(--red);
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+  .btn-danger:hover { background: rgba(224,92,92,0.1); }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 16px;
+  }
+
+  /* CONSTRAINTS TABLE */
+  .constraints-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 13px;
+    margin-top: 16px;
+  }
+  .constraints-table th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .constraints-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(42,47,66,0.5);
+    vertical-align: middle;
+  }
+  .constraints-table tr:last-child td { border-bottom: none; }
+  .constraints-table input[type="number"] {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  .constraints-table select {
+    padding: 6px 8px;
+    font-size: 12px;
+    min-width: 60px;
+  }
+
+  .coef-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* OBJECTIVE */
+  .obj-display {
+    font-family: var(--mono);
+    font-size: 15px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    min-height: 48px;
+    color: var(--accent);
+    word-break: break-all;
+    line-height: 1.6;
+  }
+
+  /* RESULTS */
+  #results { display: none; }
+
+  .steps-container { }
+
+  .step-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: rgba(0,0,0,0.2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    background: rgba(240,192,64,0.1);
+    border: 1px solid rgba(240,192,64,0.2);
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .step-title {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+  }
+  .step-toggle {
+    color: var(--muted);
+    font-size: 18px;
+    transition: transform 0.2s;
+  }
+  .step-block.collapsed .step-toggle { transform: rotate(-90deg); }
+  .step-body {
+    padding: 18px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .step-block.collapsed .step-body { display: none; }
+
+  /* SIMPLEX TABLE */
+  .simplex-wrap {
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .simplex-tbl {
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+    min-width: 100%;
+  }
+  .simplex-tbl th {
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .simplex-tbl td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    text-align: center;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .simplex-tbl .row-label {
+    color: var(--accent);
+    text-align: left;
+    font-weight: 500;
+    background: rgba(240,192,64,0.05);
+  }
+  .simplex-tbl .pivot-col { background: rgba(92,156,224,0.1); }
+  .simplex-tbl .pivot-row { background: rgba(78,203,141,0.1); }
+  .simplex-tbl .pivot-cell {
+    background: rgba(240,192,64,0.2) !important;
+    color: var(--accent);
+    font-weight: 700;
+    border: 2px solid var(--accent) !important;
+  }
+  .simplex-tbl .neg-val { color: var(--red); }
+  .simplex-tbl .pos-val { color: var(--green); }
+  .simplex-tbl .obj-row { background: rgba(160,130,250,0.08); }
+  .simplex-tbl .obj-row td { color: var(--purple); }
+
+  .pivot-info {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .pivot-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .pivot-badge.enter { border-color: var(--blue); color: var(--blue); background: rgba(92,156,224,0.1); }
+  .pivot-badge.leave { border-color: var(--green); color: var(--green); background: rgba(78,203,141,0.1); }
+  .pivot-badge.pivot { border-color: var(--accent); color: var(--accent); background: rgba(240,192,64,0.1); }
+
+  /* SOLUTION DISPLAY */
+  .solution-box {
+    background: linear-gradient(135deg, rgba(78,203,141,0.08), rgba(240,192,64,0.08));
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 24px;
+    margin-top: 16px;
+  }
+  .solution-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .solution-title::before { content: '✓'; font-size: 14px; }
+
+  .solution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .solution-var {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    text-align: center;
+  }
+  .solution-var .var-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .solution-var .var-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .obj-result {
+    background: var(--surface);
+    border: 1px solid rgba(240,192,64,0.3);
+    border-radius: 4px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .obj-label { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .obj-value { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--accent); }
+
+  .infeasible-box {
+    background: rgba(224,92,92,0.08);
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    padding: 20px;
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 13px;
+    margin-top: 16px;
+  }
+  .infeasible-box strong { display: block; margin-bottom: 6px; font-size: 14px; }
+
+  .unbounded-box {
+    background: rgba(224,123,60,0.08);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 20px;
+    color: var(--accent2);
+    font-family: var(--mono);
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  /* INFO BOX */
+  .info-box {
+    background: rgba(92,156,224,0.06);
+    border: 1px solid rgba(92,156,224,0.2);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: rgba(232,234,240,0.75);
+    line-height: 1.6;
+    margin: 10px 0;
+  }
+  .info-box code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 2px;
+    color: var(--blue);
+  }
+
+  /* ALERT */
+  .alert {
+    background: rgba(224,92,92,0.1);
+    border: 1px solid rgba(224,92,92,0.3);
+    border-radius: 4px;
+    padding: 12px 16px;
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 12px;
+    margin: 8px 0;
+    display: none;
+  }
+
+  /* EXPLANATION BOX */
+  .explain {
+    font-size: 13px;
+    color: rgba(232,234,240,0.7);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .explain strong { color: var(--text); }
+  .explain .math { font-family: var(--mono); color: var(--accent); font-size: 12px; background: var(--surface2); padding: 2px 6px; border-radius: 2px; }
+
+  /* RATIO HELPER */
+  .ratio-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(78,203,141,0.15);
+    border: 1px solid rgba(78,203,141,0.3);
+    color: var(--green);
+    border-radius: 2px;
+    margin-left: 4px;
+  }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  footer {
+    text-align: center;
+    padding: 40px 0 28px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .coef-row { flex-direction: column; }
+    header { padding: 28px 0 20px; }
+  }
+
+  .tag-art-var { color: var(--accent2); }
+  .tag-slack-var { color: var(--blue); }
+  .tag-m-var { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-tag">Investigación de Operaciones</div>
+    <h1>Método Simplex</h1>
+    <p class="subtitle">Resuelve problemas de programación lineal mediante iteraciones de pivoteo hacia la solución óptima</p>
+  </header>
+
+  <!-- TEORÍA RESUMIDA -->
+  <div class="card">
+    <div class="card-title">¿Qué es el Método Simplex?</div>
+    <div class="explain">
+      El <strong>Método Simplex</strong> (desarrollado por George Dantzig en 1947) es el algoritmo fundamental para resolver problemas de <strong>Programación Lineal (PL)</strong>. Trabaja recorriendo los vértices de la región factible en busca de la solución óptima, mejorando el valor de la función objetivo en cada paso.<br><br>
+      <strong>Idea principal:</strong> Partiendo de una <span style="color:var(--blue)">solución básica factible inicial</span>, el método realiza <em>operaciones de pivoteo</em> para moverse hacia vértices adyacentes con mejor valor objetivo, hasta que ningún movimiento adicional pueda mejorar la solución.
+      <ul style="margin: 10px 0 0 18px; line-height: 2;">
+        <li><strong>Variables de decisión:</strong> <span class="math">x₁, x₂, …, xₙ</span> — las incógnitas del problema</li>
+        <li><strong>Variables de holgura <span style="color:var(--blue)">(sᵢ)</span>:</strong> convierten restricciones <span class="math">≤</span> en igualdades</li>
+        <li><strong>Variables artificiales <span style="color:var(--red)">(aᵢ)</span>:</strong> usadas en restricciones <span class="math">≥</span> o <span class="math">=</span> con la penalización Gran M</li>
+        <li>Si en la solución óptima alguna <span class="math">aᵢ > 0</span>, el problema es <strong style="color:var(--red)">infactible</strong></li>
+      </ul>
+      <br>
+      <strong>Pasos del algoritmo:</strong>
+      <ol style="margin: 6px 0 0 18px; line-height: 2.2;">
+        <li>Formular el problema en <span style="color:var(--accent)">forma estándar</span> (todas igualdades, variables ≥ 0).</li>
+        <li>Construir la <span style="color:var(--accent)">tabla Simplex</span> inicial con una base factible.</li>
+        <li><strong>Criterio de entrada:</strong> seleccionar la variable con el coeficiente más negativo en la fila Z (para maximizar).</li>
+        <li><strong>Criterio de salida:</strong> aplicar la <span style="color:var(--green)">regla de la razón mínima</span> (mín. b/aᵢⱼ con aᵢⱼ > 0).</li>
+        <li>Realizar el <em>pivoteo</em> sobre el elemento seleccionado para obtener la nueva base.</li>
+        <li>Repetir desde el paso 3 hasta que todos los coeficientes en la fila Z sean <span class="math">≥ 0</span>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="card">
+    <div class="card-title">01 — Configuración del Problema</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Número de Variables (n)</label>
+        <input type="number" id="nVars" min="1" max="8" value="2">
+      </div>
+      <div class="form-group">
+        <label>Número de Restricciones (m)</label>
+        <input type="number" id="nCons" min="1" max="8" value="2">
+      </div>
+      <div class="form-group">
+        <label>Tipo de Optimización</label>
+        <select id="optType">
+          <option value="max">Maximizar (Max Z)</option>
+          <option value="min">Minimizar (Min Z)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="buildForm()">⟳ Generar Formulario</button>
+  </div>
+
+  <!-- FUNCIÓN OBJETIVO -->
+  <div id="objCard" class="card" style="display:none">
+    <div class="card-title">02 — Función Objetivo</div>
+    <div class="explain">Ingresa los coeficientes <strong>cⱼ</strong> de cada variable en la función objetivo.</div>
+    <div id="objInputs" class="coef-row"></div>
+    <div id="objDisplay" class="obj-display">Z = ?</div>
+  </div>
+
+  <!-- RESTRICCIONES -->
+  <div id="consCard" class="card" style="display:none">
+    <div class="card-title">03 — Restricciones</div>
+    <div class="explain">
+      Ingresa cada restricción. Tipos permitidos:<br>
+      <span class="math">≤</span> → se agrega <span style="color:var(--blue)">variable de holgura</span> &nbsp;|&nbsp;
+      <span class="math">≥</span> → se resta <span style="color:var(--accent2)">variable de exceso</span> y se agrega <span style="color:var(--red)">variable artificial</span> &nbsp;|&nbsp;
+      <span class="math">=</span> → solo <span style="color:var(--red)">variable artificial</span>
+    </div>
+    <div id="consTable"></div>
+    <div id="formAlert" class="alert">⚠ Verifica que todos los campos estén completos y el RHS sea ≥ 0</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="solve()">▶ Resolver método</button>
+      <button class="btn btn-secondary" onclick="loadExample()">Cargar Ejemplo</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div id="results">
+    <hr class="section-divider">
+    <div class="card">
+      <div class="card-title">04 — Formulación Estándar</div>
+      <div id="standardForm"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">05 — Iteraciones del Simplex</div>
+      <div id="stepsDiv" class="steps-container"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">06 — Solución Óptima</div>
+      <div id="solutionDiv"></div>
+    </div>
+  </div>
+
+</div>
+<footer>Simplex Calculator &nbsp;·&nbsp; Investigación de Operaciones &nbsp;·&nbsp; Método Simplex (Gran M)</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════════════════
+let nVars = 2, nCons = 2;
+const BIG_M = 1e6; // Representación numérica de M
+
+// ═══════════════════════════════════════════════════════════
+// BUILD FORM
+// ═══════════════════════════════════════════════════════════
+function buildForm() {
+  nVars = parseInt(document.getElementById('nVars').value) || 2;
+  nCons = parseInt(document.getElementById('nCons').value) || 2;
+  if (nVars < 1 || nVars > 8 || nCons < 1 || nCons > 8) {
+    alert('Variables: 1-8, Restricciones: 1-8');
+    return;
+  }
+
+  // Obj inputs
+  const objDiv = document.getElementById('objInputs');
+  objDiv.innerHTML = '';
+  for (let j = 0; j < nVars; j++) {
+    const inp = document.createElement('div');
+    inp.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    inp.innerHTML = `
+      <input type="number" id="c${j}" value="0" style="width:80px" oninput="updateObjDisplay()" placeholder="c${j+1}">
+      <span style="font-family:var(--mono);color:var(--muted);font-size:13px">x<sub>${j+1}</sub>${j<nVars-1?'+':''}</span>
+    `;
+    objDiv.appendChild(inp);
+  }
+  updateObjDisplay();
+  document.getElementById('objCard').style.display = 'block';
+
+  // Constraint table
+  const ct = document.getElementById('consTable');
+  let html = `<table class="constraints-table">
+    <thead><tr>
+      <th>#</th>
+      ${Array.from({length:nVars},(_,j)=>`<th>x<sub>${j+1}</sub></th>`).join('')}
+      <th>Tipo</th>
+      <th>RHS (b)</th>
+      <th></th>
+    </tr></thead><tbody>`;
+  for (let i = 0; i < nCons; i++) {
+    html += `<tr id="row${i}">
+      <td style="color:var(--muted);font-family:var(--mono)">${i+1}</td>
+      ${Array.from({length:nVars},(_,j)=>`<td><input type="number" id="a${i}_${j}" value="0" style="width:70px" oninput=""></td>`).join('')}
+      <td><select id="t${i}">
+        <option value="le">≤</option>
+        <option value="ge">≥</option>
+        <option value="eq">=</option>
+      </select></td>
+      <td><input type="number" id="b${i}" value="0" style="width:80px"></td>
+      <td></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  ct.innerHTML = html;
+  document.getElementById('consCard').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+}
+
+function updateObjDisplay() {
+  const type = document.getElementById('optType').value;
+  let parts = [];
+  for (let j = 0; j < nVars; j++) {
+    const c = parseFloat(document.getElementById('c'+j)?.value) || 0;
+    if (c !== 0) parts.push(`${c > 0 && parts.length > 0 ? '+' : ''}${c}x${j+1}`);
+  }
+  const display = document.getElementById('objDisplay');
+  if (display) display.textContent = (type==='max'?'Max ':'Min ') + 'Z = ' + (parts.length ? parts.join(' ') : '0');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PARSE INPUT
+// ═══════════════════════════════════════════════════════════
+function parseInput() {
+  const type = document.getElementById('optType').value;
+  let c = [], A = [], b = [], types = [];
+
+  // Parse objective coefficients
+  for (let j = 0; j < nVars; j++) {
+    const el = document.getElementById('c' + j);
+    const v = el && el.value !== '' ? parseFloat(el.value) : NaN;
+    if (isNaN(v)) return null;
+    c.push(v);
+  }
+
+  // Parse constraint rows
+  for (let i = 0; i < nCons; i++) {
+    let row = [];
+    let rowOk = true;
+    for (let j = 0; j < nVars; j++) {
+      const el = document.getElementById(`a${i}_${j}`);
+      const v = el && el.value !== '' ? parseFloat(el.value) : NaN;
+      if (isNaN(v)) { rowOk = false; break; }
+      row.push(v);
+    }
+    if (!rowOk) return null;
+
+    const bEl = document.getElementById('b' + i);
+    const bv = bEl && bEl.value !== '' ? parseFloat(bEl.value) : NaN;
+    if (isNaN(bv)) return null;
+
+    // If RHS is negative, multiply the whole row by -1 and flip the sign
+    if (bv < 0) {
+      row = row.map(v => -v);
+      const origType = document.getElementById('t' + i).value;
+      const flipped = origType === 'le' ? 'ge' : origType === 'ge' ? 'le' : 'eq';
+      types.push(flipped);
+      b.push(-bv);
+    } else {
+      types.push(document.getElementById('t' + i).value);
+      b.push(bv);
+    }
+    A.push(row);
+  }
+
+  return { type, c, A, b, types };
+}
+
+// ═══════════════════════════════════════════════════════════
+// SOLVE
+// ═══════════════════════════════════════════════════════════
+function solve() {
+  const alert_el = document.getElementById('formAlert');
+  const inp = parseInput();
+  if (!inp) { alert_el.style.display = 'block'; return; }
+  alert_el.style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+
+  const steps = [];
+  const solution = bigM(inp, steps);
+
+  renderStandardForm(inp);
+  renderSteps(steps, inp);
+  renderSolution(solution, inp);
+
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ═══════════════════════════════════════════════════════════
+// BIG-M ALGORITHM
+// ═══════════════════════════════════════════════════════════
+function bigM(inp, steps) {
+  const { type, c, A, b, types } = inp;
+  const n = nVars;
+  const m = nCons;
+
+  // Build augmented tableau
+  // Variables: x1..xn | slacks | artificials
+  // Count extras
+  let slackCount = 0, artCount = 0;
+  const varTypes = []; // 'decision','slack','excess','artificial'
+  const varNames = [];
+  for (let j = 0; j < n; j++) { varTypes.push('decision'); varNames.push(`x${j+1}`); }
+
+  // Per constraint extras
+  const extraPerCon = []; // {slack:idx or null, art:idx or null}
+  let extraIdx = n;
+  for (let i = 0; i < m; i++) {
+    let info = {};
+    if (types[i] === 'le') {
+      info.slack = extraIdx++;
+      varTypes.push('slack'); varNames.push(`s${i+1}`);
+      info.art = null;
+    } else if (types[i] === 'ge') {
+      info.excess = extraIdx++;
+      varTypes.push('excess'); varNames.push(`e${i+1}`);
+      info.art = extraIdx++;
+      varTypes.push('artificial'); varNames.push(`a${i+1}`);
+    } else { // eq
+      info.slack = null; info.excess = null;
+      info.art = extraIdx++;
+      varTypes.push('artificial'); varNames.push(`a${i+1}`);
+    }
+    extraPerCon.push(info);
+  }
+  const totalVars = extraIdx;
+
+  // Build tableau rows (m rows + 1 obj row)
+  // Row format: [coefficients | rhs]
+  let tab = [];
+  for (let i = 0; i < m; i++) {
+    let row = new Array(totalVars + 1).fill(0);
+    for (let j = 0; j < n; j++) row[j] = A[i][j];
+    const info = extraPerCon[i];
+    if (info.slack !== undefined && info.slack !== null) row[info.slack] = 1;
+    if (info.excess !== undefined && info.excess !== null) row[info.excess] = -1;
+    if (info.art !== undefined && info.art !== null) row[info.art] = 1;
+    row[totalVars] = b[i];
+    tab.push(row);
+  }
+
+  // Objective row: we work in maximization form internally.
+  // For max: row = -c (standard simplex maximization setup)
+  // For min: we negate the objective → internally max (-Z), so row = +c
+  let objRow = new Array(totalVars + 1).fill(0);
+  const sign = (type === 'max') ? 1 : -1;
+  for (let j = 0; j < n; j++) objRow[j] = -sign * c[j];
+  // Artificial penalty: always +M in the internally-maximized objective row
+  // (forces artificials to be driven out regardless of max/min)
+  for (let i = 0; i < m; i++) {
+    const info = extraPerCon[i];
+    if (info.art !== null && info.art !== undefined) objRow[info.art] = BIG_M;
+  }
+  tab.push(objRow);
+
+  // Basis: initially artificials or slacks
+  let basis = [];
+  for (let i = 0; i < m; i++) {
+    const info = extraPerCon[i];
+    if (types[i] === 'le') basis.push(info.slack);
+    else basis.push(info.art);
+  }
+
+  // Make obj row proper (eliminate artificials in basis)
+  for (let i = 0; i < m; i++) {
+    if (varTypes[basis[i]] === 'artificial') {
+      // tab[m] -= BIG_M * tab[i]
+      for (let j = 0; j <= totalVars; j++) {
+        tab[m][j] -= BIG_M * tab[i][j];
+      }
+    }
+  }
+
+  const MAX_ITER = 50;
+
+  function snapshot(pivotCol, pivotRow, ratios) {
+    steps.push({
+      tab: tab.map(r => [...r]),
+      basis: [...basis],
+      varNames: [...varNames],
+      varTypes: [...varTypes],
+      totalVars, m,
+      pivotCol, pivotRow,
+      ratios: ratios ? [...ratios] : null
+    });
+  }
+
+  // Initial snapshot
+  snapshot(null, null, null);
+
+  let iteration = 0;
+  while (iteration < MAX_ITER) {
+    iteration++;
+    // Find pivot column: most negative in obj row
+    let pivCol = -1, minVal = -1e-9;
+    for (let j = 0; j < totalVars; j++) {
+      if (tab[m][j] < minVal) { minVal = tab[m][j]; pivCol = j; }
+    }
+    if (pivCol === -1) break; // Optimal
+
+    // Find pivot row: min ratio test
+    let pivRow = -1, minRatio = Infinity;
+    let ratios = new Array(m).fill(null);
+    for (let i = 0; i < m; i++) {
+      if (tab[i][pivCol] > 1e-9) {
+        ratios[i] = tab[i][totalVars] / tab[i][pivCol];
+        if (ratios[i] < minRatio - 1e-9) {
+          minRatio = ratios[i]; pivRow = i;
+        }
+      }
+    }
+    if (pivRow === -1) {
+      // Unbounded
+      snapshot(pivCol, -1, ratios);
+      return { status: 'unbounded', steps };
+    }
+
+    snapshot(pivCol, pivRow, ratios);
+
+    // Pivot
+    const pivVal = tab[pivRow][pivCol];
+    for (let j = 0; j <= totalVars; j++) tab[pivRow][j] /= pivVal;
+    for (let i = 0; i <= m; i++) {
+      if (i !== pivRow) {
+        const factor = tab[i][pivCol];
+        for (let j = 0; j <= totalVars; j++) tab[i][j] -= factor * tab[pivRow][j];
+      }
+    }
+    basis[pivRow] = pivCol;
+  }
+
+  // Final snapshot (optimal)
+  snapshot(null, null, null);
+
+  // Check feasibility: any artificial in basis > 0?
+  for (let i = 0; i < m; i++) {
+    if (varTypes[basis[i]] === 'artificial' && Math.abs(tab[i][totalVars]) > 1e-6) {
+      return { status: 'infeasible', tab, basis, varNames, varTypes, totalVars, m, type, sign, n };
+    }
+  }
+
+  // Extract solution
+  let xVals = new Array(n).fill(0);
+  for (let i = 0; i < m; i++) {
+    if (basis[i] < n) xVals[basis[i]] = tab[i][totalVars];
+  }
+
+  // Objective value
+  let zVal = 0;
+  for (let j = 0; j < n; j++) zVal += c[j] * xVals[j];
+
+  return { status: 'optimal', xVals, zVal, tab, basis, varNames, varTypes, totalVars, m, type, sign, n, nCons: m };
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER STANDARD FORM
+// ═══════════════════════════════════════════════════════════
+function renderStandardForm(inp) {
+  const { type, c, A, b, types } = inp;
+  const n = nVars;
+
+  let html = '<div class="explain">';
+  html += `<strong>Función Objetivo (${type === 'max' ? 'Maximizar' : 'Minimizar'}):</strong><br>`;
+
+  let objParts = c.map((ci, j) => `${ci}x<sub>${j+1}</sub>`).join(' + ');
+  // Artificials
+  let artIdx = 1;
+  let artPenalty = [];
+  types.forEach((t, i) => {
+    if (t === 'ge' || t === 'eq') {
+      artPenalty.push(`${type==='min'?'+':'-'}M·a<sub>${i+1}</sub>`);
+    }
+  });
+  html += `<div class="obj-display">${type==='max'?'Max':'Min'} Z = ${objParts}`;
+  if (artPenalty.length) html += ` <span style="color:var(--red)"> ${artPenalty.join(' ')}</span>`;
+  html += `</div>`;
+
+  html += '<br><strong>Sujeto a:</strong><br><div style="font-family:var(--mono);font-size:13px;margin-top:8px;">';
+  for (let i = 0; i < n; i = n) { // just once
+    let parts = [];
+    for (let j = 0; j < nVars; j++) {
+      html += '';
+    }
+    break;
+  }
+
+  for (let i = 0; i < nCons; i++) {
+    let parts = A[i].map((aij, j) => `${aij}x<sub>${j+1}</sub>`).join(' + ');
+    let extras = '';
+    if (types[i] === 'le') extras += ` <span style="color:var(--blue)">+ s<sub>${i+1}</sub></span>`;
+    if (types[i] === 'ge') extras += ` <span style="color:var(--accent2)">− e<sub>${i+1}</sub></span> <span style="color:var(--red)">+ a<sub>${i+1}</sub></span>`;
+    if (types[i] === 'eq') extras += ` <span style="color:var(--red)">+ a<sub>${i+1}</sub></span>`;
+    html += `<div style="margin:4px 0">${parts}${extras} = ${b[i]}</div>`;
+  }
+  html += `</div>`;
+
+  html += `<br><div class="info-box">
+    <strong>Leyenda de variables:</strong><br>
+    <span style="color:var(--text)">x<sub>j</sub></span> = Variable de decisión &nbsp;|&nbsp;
+    <span class="tag-slack-var">s<sub>i</sub></span> = Variable de holgura (slack) &nbsp;|&nbsp;
+    <span class="tag-art-var">e<sub>i</sub></span> = Variable de exceso &nbsp;|&nbsp;
+    <span class="tag-m-var">a<sub>i</sub></span> = Variable artificial (penalización M = ${(1e6).toLocaleString()})
+  </div>`;
+  html += '</div>';
+  document.getElementById('standardForm').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER STEPS
+// ═══════════════════════════════════════════════════════════
+function renderSteps(steps, inp) {
+  const div = document.getElementById('stepsDiv');
+  div.innerHTML = '';
+
+  steps.forEach((step, idx) => {
+    const isLast = idx === steps.length - 1;
+    const isFirst = idx === 0;
+    const block = document.createElement('div');
+    block.className = 'step-block';
+
+    const entering = step.pivotCol !== null ? step.varNames[step.pivotCol] : null;
+    const leaving = step.pivotRow !== null ? step.varNames[step.basis[step.pivotRow]] : null;
+
+    let titleText = isFirst
+      ? 'Tabla Inicial (Iteración 0)'
+      : isLast && step.pivotCol === null
+        ? `Solución Óptima — Iteración ${idx}`
+        : `Iteración ${idx}: Entra ${entering} / Sale ${leaving}`;
+
+    block.innerHTML = `
+      <div class="step-header" onclick="toggleStep(this)">
+        <span class="step-num">IT-${idx}</span>
+        <span class="step-title">${titleText}</span>
+        <span class="step-toggle">▾</span>
+      </div>
+      <div class="step-body">
+        ${renderTable(step)}
+        ${!isLast && step.pivotCol !== null ? renderPivotInfo(step) : ''}
+        ${isLast && step.pivotCol === null ? '<div style="font-family:var(--mono);color:var(--green);font-size:12px;margin-top:10px">✓ Todos los coeficientes en la fila Z son ≥ 0. Solución óptima encontrada.</div>' : ''}
+      </div>
+    `;
+    div.appendChild(block);
+    // Collapse all except first and last
+    if (!isFirst && !isLast) block.classList.add('collapsed');
+  });
+}
+
+function toggleStep(header) {
+  header.parentElement.classList.toggle('collapsed');
+}
+
+function renderTable(step) {
+  const { tab, basis, varNames, varTypes, totalVars, m, pivotCol, pivotRow, ratios } = step;
+  let html = '<div class="simplex-wrap"><table class="simplex-tbl">';
+
+  // Header
+  html += '<thead><tr><th>Base</th><th>cB</th>';
+  for (let j = 0; j < totalVars; j++) {
+    const cls = pivotCol === j ? ' class="pivot-col"' : '';
+    const vt = varTypes[j];
+    const color = vt === 'artificial' ? 'var(--red)' : vt === 'slack' ? 'var(--blue)' : vt === 'excess' ? 'var(--accent2)' : 'var(--text)';
+    html += `<th${cls} style="color:${color}">${varNames[j]}</th>`;
+  }
+  html += '<th>b (RHS)</th>';
+  if (ratios) html += '<th>Ratio b/aᵢⱼ</th>';
+  html += '</tr></thead><tbody>';
+
+  // Constraint rows
+  for (let i = 0; i < m; i++) {
+    const ispivot = pivotRow === i;
+    const rowCls = ispivot ? ' class="pivot-row"' : '';
+    const bv = basis[i];
+    const vt = varTypes[bv];
+    const bColor = vt === 'artificial' ? 'var(--red)' : vt === 'slack' ? 'var(--blue)' : vt === 'excess' ? 'var(--accent2)' : 'var(--accent)';
+    html += `<tr${rowCls}>`;
+    html += `<td class="row-label" style="color:${bColor}">${varNames[bv]}</td>`;
+    html += `<td style="font-family:var(--mono);color:var(--muted);font-size:11px">${getCB(bv, varTypes)}</td>`;
+    for (let j = 0; j < totalVars; j++) {
+      const val = tab[i][j];
+      const iPC = pivotCol === j;
+      const isPRC = pivotCol === j && pivotRow === i;
+      let cls = '';
+      if (isPRC) cls = 'pivot-cell';
+      else if (iPC) cls = 'pivot-col';
+      else if (ispivot) cls = 'pivot-row';
+      const numColor = val < -1e-9 ? ' style="color:var(--red)"' : val > 1e-9 ? '' : ' style="color:var(--muted)"';
+      html += `<td class="${cls}"${cls ? '' : numColor}>${fmtNum(val)}</td>`;
+    }
+    html += `<td style="color:var(--accent);font-weight:600">${fmtNum(tab[i][totalVars])}</td>`;
+    if (ratios) {
+      const r = ratios[i];
+      const isMinRow = pivotRow === i;
+      html += `<td>${r !== null ? `<span class="${isMinRow ? 'ratio-badge' : ''}">${fmtNum(r)}</span>` : '<span style="color:var(--muted)">−</span>'}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  // Obj row
+  html += `<tr class="obj-row"><td class="row-label" style="color:var(--purple)">Z</td><td></td>`;
+  for (let j = 0; j < totalVars; j++) {
+    const val = tab[m][j];
+    html += `<td>${fmtNum(val)}</td>`;
+  }
+  html += `<td style="color:var(--purple);font-weight:700">${fmtNum(tab[m][totalVars])}</td>`;
+  if (ratios) html += '<td></td>';
+  html += '</tr>';
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function getCB(bv, varTypes) {
+  const vt = varTypes[bv];
+  if (vt === 'artificial') return '−M / +M';
+  if (vt === 'slack' || vt === 'excess') return '0';
+  return 'cⱼ';
+}
+
+function renderPivotInfo(step) {
+  const { pivotCol, pivotRow, basis, varNames, tab, totalVars } = step;
+  if (pivotCol === null) return '';
+  const entering = varNames[pivotCol];
+  const leaving = pivotRow >= 0 ? varNames[basis[pivotRow]] : '?';
+  const pivVal = pivotRow >= 0 ? fmtNum(tab[pivotRow][pivotCol]) : '?';
+  return `
+    <div class="pivot-info">
+      <span class="pivot-badge enter">↑ Entra: ${entering}</span>
+      <span class="pivot-badge leave">↓ Sale: ${leaving}</span>
+      <span class="pivot-badge pivot">Pivote: ${pivVal}</span>
+    </div>
+    <div class="explain" style="margin-top:10px;font-size:12px">
+      Columna pivote: <strong>${entering}</strong> (coeficiente más negativo en fila Z) &nbsp;·&nbsp;
+      Fila pivote: <strong>${leaving}</strong> (mínima razón b/aᵢⱼ positiva)
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER SOLUTION
+// ═══════════════════════════════════════════════════════════
+function renderSolution(sol, inp) {
+  const div = document.getElementById('solutionDiv');
+  if (sol.status === 'infeasible') {
+    div.innerHTML = `<div class="infeasible-box">
+      <strong>⚠ Problema Infactible</strong>
+      Alguna variable artificial permanece en la base con valor > 0 en la solución óptima.<br>
+      Esto indica que las restricciones son contradictorias y no existe región factible.
+    </div>`;
+    return;
+  }
+  if (sol.status === 'unbounded') {
+    div.innerHTML = `<div class="unbounded-box">
+      <strong>⚡ Problema No Acotado</strong>
+      La función objetivo puede crecer (o decrecer) indefinidamente.<br>
+      Verifica las restricciones del modelo.
+    </div>`;
+    return;
+  }
+
+  let html = '<div class="solution-box">';
+  html += '<div class="solution-title">Solución Óptima Encontrada</div>';
+  html += '<div class="solution-grid">';
+  for (let j = 0; j < sol.n; j++) {
+    const v = sol.xVals[j];
+    html += `<div class="solution-var">
+      <div class="var-name">x<sub>${j+1}</sub></div>
+      <div class="var-val">${fmtNum(v)}</div>
+    </div>`;
+  }
+  html += '</div>';
+
+  html += `<div class="obj-result">
+    <span class="obj-label">${sol.type === 'max' ? 'Máximo' : 'Mínimo'} Z =</span>
+    <span class="obj-value">${fmtNum(sol.zVal)}</span>
+  </div>`;
+
+  // Verification
+  html += `<div class="info-box" style="margin-top:16px">
+    <strong>Verificación de restricciones:</strong><br>`;
+  for (let i = 0; i < nCons; i++) {
+    let lhs = 0;
+    for (let j = 0; j < nVars; j++) lhs += inp.A[i][j] * sol.xVals[j];
+    const sym = inp.types[i] === 'le' ? '≤' : inp.types[i] === 'ge' ? '≥' : '=';
+    const ok = inp.types[i] === 'le' ? lhs <= inp.b[i] + 1e-6
+              : inp.types[i] === 'ge' ? lhs >= inp.b[i] - 1e-6
+              : Math.abs(lhs - inp.b[i]) < 1e-6;
+    html += `<span style="font-family:var(--mono);font-size:12px;margin-right:16px">
+      R${i+1}: ${fmtNum(lhs)} ${sym} ${inp.b[i]} 
+      <span style="color:${ok?'var(--green)':'var(--red)'}">${ok?'✓':'✗'}</span>
+    </span><br>`;
+  }
+  html += '</div></div>';
+  div.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function fmtNum(v) {
+  if (Math.abs(v) < 1e-8) return '0';
+  const absV = Math.abs(v);
+  const sgn = v < 0 ? '−' : '';
+  // Values near ±M (within 10% of BIG_M)
+  if (absV >= BIG_M * 0.5) {
+    const multiples = Math.round(absV / BIG_M);
+    const remainder = absV - multiples * BIG_M;
+    const mStr = multiples === 1 ? 'M' : `${multiples}M`;
+    if (Math.abs(remainder) < 1e-4) return `${sgn}${mStr}`;
+    const remStr = remainder > 0
+      ? '+' + fmtNum(remainder)
+      : fmtNum(remainder);
+    return `${sgn}${mStr}${remStr}`;
+  }
+  // Round to 4 decimal places, trim trailing zeros
+  const r = Math.round(v * 10000) / 10000;
+  if (Number.isInteger(r)) return r.toString();
+  // Show as fraction if it's a clean one (halves, thirds, quarters...)
+  return parseFloat(r.toFixed(4)).toString();
+}
+
+function clearAll() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('standardForm').innerHTML = '';
+  document.getElementById('stepsDiv').innerHTML = '';
+  document.getElementById('solutionDiv').innerHTML = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXAMPLE: Classic Big-M problem
+// ═══════════════════════════════════════════════════════════
+function loadExample() {
+  document.getElementById('nVars').value = 2;
+  document.getElementById('nCons').value = 3;
+  document.getElementById('optType').value = 'max';
+  buildForm();
+  // Max Z = 3x1 + 2x2
+  document.getElementById('c0').value = 3;
+  document.getElementById('c1').value = 2;
+  // 2x1 + x2 <= 18
+  document.getElementById('a0_0').value = 2;
+  document.getElementById('a0_1').value = 1;
+  document.getElementById('t0').value = 'le';
+  document.getElementById('b0').value = 18;
+  // x1 + 3x2 >= 12
+  document.getElementById('a1_0').value = 1;
+  document.getElementById('a1_1').value = 3;
+  document.getElementById('t1').value = 'ge';
+  document.getElementById('b1').value = 12;
+  // x1 + x2 = 8
+  document.getElementById('a2_0').value = 1;
+  document.getElementById('a2_1').value = 1;
+  document.getElementById('t2').value = 'eq';
+  document.getElementById('b2').value = 8;
+  updateObjDisplay();
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+buildForm();
+document.getElementById('optType').addEventListener('change', updateObjDisplay);
+</script>
+</body>
+</html>

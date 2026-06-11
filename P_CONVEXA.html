@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programación Convexa — IO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg-deep:    #080E1F;
+    --bg-panel:   #0D1530;
+    --bg-card:    #111B3A;
+    --bg-input:   #0A1228;
+    --border:     rgba(0, 212, 255, 0.15);
+    --border-active: rgba(0, 212, 255, 0.55);
+    --cyan:       #00D4FF;
+    --violet:     #7C3AED;
+    --violet-lt:  #A78BFA;
+    --green:      #10FFAB;
+    --text:       #E8EDF8;
+    --text-muted: #6B7FA8;
+    --text-dim:   #3A4A6B;
+    --red:        #FF4E6A;
+    --shadow:     0 8px 32px rgba(0,0,0,.45);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  /* ── ORBS ── */
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0;
+  }
+  .orb-1 { width: 500px; height: 500px; background: rgba(124,58,237,.18); top: -150px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: rgba(0,212,255,.10); bottom: -100px; left: -80px; }
+
+  /* ── LAYOUT ── */
+  .container {
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 1;
+    padding: 44px 24px 0;
+    display: flex; align-items: center; gap: 20px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .header-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cyan); border: 1px solid var(--border-active);
+    background: rgba(0,212,255,.06);
+    padding: 4px 12px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .header-title {
+    font-size: clamp(22px, 4vw, 34px);
+    font-weight: 700; letter-spacing: -.02em;
+    background: linear-gradient(135deg, #fff 30%, var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header-sub {
+    font-size: 13px; color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: 10px;
+    opacity: .7;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 30px;
+    box-shadow: var(--shadow);
+    transition: border-color .25s;
+  }
+  .card:hover { border-color: var(--border-active); }
+  .card + .card, .card + .results-area { margin-top: 22px; }
+
+  /* ── INPUT FIELD ── */
+  .field-label {
+    font-size: 12px; font-weight: 500; letter-spacing: .04em;
+    color: var(--text-muted); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .field-label .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; background: rgba(124,58,237,.2);
+    color: var(--violet-lt); border: 1px solid rgba(124,58,237,.3);
+    padding: 1px 8px; border-radius: 4px;
+  }
+
+  input[type="text"], input[type="number"], select {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 11px 16px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,212,255,.12);
+  }
+  select { cursor: pointer; }
+  select option { background: var(--bg-card); }
+
+  /* ── RESTRICTIONS GRID ── */
+  .rest-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; flex-wrap: wrap; gap: 12px;
+  }
+  .rest-count-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .rest-count-row input[type="number"] {
+    width: 72px; text-align: center;
+  }
+  .restriction-row {
+    display: grid; grid-template-columns: auto 1fr auto 100px;
+    align-items: center; gap: 10px; margin-bottom: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+    transition: border-color .2s;
+  }
+  .restriction-row:hover { border-color: rgba(124,58,237,.4); }
+  .rest-index {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--violet-lt);
+    min-width: 52px;
+  }
+  .rest-sign select { width: 80px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600; letter-spacing: .02em;
+    padding: 12px 26px; border-radius: 10px; border: none;
+    cursor: pointer; transition: all .2s; white-space: nowrap;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--cyan), #0094CC);
+    color: #060C1E;
+    box-shadow: 0 4px 20px rgba(0,212,255,.3);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(0,212,255,.45);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: rgba(124,58,237,.15);
+    color: var(--violet-lt);
+    border: 1px solid rgba(124,58,237,.35);
+  }
+  .btn-secondary:hover { background: rgba(124,58,237,.25); }
+  .btn-ghost {
+    background: rgba(255,255,255,.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 8px 16px; font-size: 12px;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,.09); color: var(--text); }
+
+  /* ── EXAMPLES CHIP ROW ── */
+  .examples-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+  }
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(0,212,255,.06);
+    border: 1px solid var(--border);
+    color: var(--cyan);
+    padding: 5px 13px; border-radius: 20px;
+    cursor: pointer; transition: all .18s;
+  }
+  .chip:hover {
+    background: rgba(0,212,255,.14);
+    border-color: var(--border-active);
+  }
+
+  /* ── RESULTS AREA ── */
+  .results-area {
+    display: none; flex-direction: column; gap: 22px;
+  }
+  .results-area.visible { display: flex; animation: fadeUp .4s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── RESULT CARD ACCENT ── */
+  .result-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(16,255,171,.25);
+    border-left: 4px solid var(--green);
+    border-radius: 16px; padding: 26px 28px;
+    box-shadow: var(--shadow);
+  }
+  .result-card.error {
+    border-color: rgba(255,78,106,.25);
+    border-left-color: var(--red);
+  }
+
+  .result-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--green); text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .result-title.error { color: var(--red); }
+  .result-title::before {
+    content: '';
+    display: block; width: 8px; height: 8px;
+    border-radius: 50%; background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  /* ── KKT STEPS ── */
+  .kkt-steps { display: flex; flex-direction: column; gap: 14px; }
+  .kkt-step {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px;
+  }
+  .kkt-step-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--violet-lt); margin-bottom: 8px;
+  }
+  .kkt-step-body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--text);
+    line-height: 1.8; white-space: pre-wrap;
+  }
+
+  /* ── OPTIMAL ROW ── */
+  .optimal-row {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-top: 6px;
+  }
+  .optimal-chip {
+    background: rgba(16,255,171,.08);
+    border: 1px solid rgba(16,255,171,.25);
+    border-radius: 10px; padding: 12px 22px;
+    text-align: center;
+  }
+  .optimal-chip .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px; font-weight: 700;
+    color: var(--green);
+  }
+  .optimal-chip .lbl {
+    font-size: 11px; color: var(--text-muted); margin-top: 2px;
+  }
+
+  /* ── GRAPH ── */
+  #plotContainer {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: var(--shadow);
+    min-height: 460px;
+  }
+
+  /* ── SEPARATOR ── */
+  hr.sep {
+    border: none; border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* ── LOADING SPINNER ── */
+  .spinner-wrap {
+    display: none; align-items: center; justify-content: center;
+    gap: 14px; padding: 20px; color: var(--text-muted); font-size: 14px;
+  }
+  .spinner-wrap.active { display: flex; }
+  .spinner {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── FORMULA PREVIEW ── */
+  .formula-preview {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--cyan);
+    background: rgba(0,212,255,.06);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px;
+    margin-top: 10px; min-height: 36px;
+    transition: all .2s;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .restriction-row { grid-template-columns: auto 1fr; }
+    .rest-sign, .rest-rhs { grid-column: 1 / -1; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<header>
+  <div>
+    <div class="header-badge">5.7 — Investigación de Operaciones</div>
+    <h1 class="header-title" style="margin-top:10px">Programación Convexa</h1>
+    <p class="header-sub">Condiciones KKT · Punto óptimo · Visualización de la región factible</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ── FUNCIÓN OBJETIVO ── -->
+  <div class="card" style="margin-top:32px">
+    <p class="section-label">01 — Función Objetivo</p>
+    <div class="field-label">
+      <span>Minimizar f(x, y) =</span>
+      <span class="tag">cuadrática convexa</span>
+    </div>
+    <input type="text" id="objFunc"
+      placeholder="ej: x^2 + y^2 - 6*x - 8*y + 25"
+      value="x^2 + y^2 - 6*x - 8*y + 25"
+      oninput="updatePreview()">
+    <div class="formula-preview" id="funcPreview">f(x,y) = x² + y² − 6x − 8y + 25</div>
+
+    <div style="margin-top:20px">
+      <p class="section-label" style="margin-bottom:6px">Ejemplos rápidos</p>
+      <div class="examples-row">
+        <div class="chip" onclick="loadExample(0)">Ej. 1 — Clase</div>
+        <div class="chip" onclick="loadExample(1)">Ej. 2 — Sin restricción activa</div>
+        <div class="chip" onclick="loadExample(2)">Ej. 3 — Tres restricciones</div>
+        <div class="chip" onclick="loadExample(3)">Ej. 4 — Parábola desplazada</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESTRICCIONES ── -->
+  <div class="card">
+    <div class="rest-header">
+      <p class="section-label" style="margin-bottom:0">02 — Restricciones</p>
+      <div class="rest-count-row">
+        <span style="font-size:13px;color:var(--text-muted)">Número de restricciones:</span>
+        <input type="number" id="numRestrictions" min="1" max="8" value="3"
+          style="width:72px;text-align:center" oninput="buildRestrictions()">
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px" onclick="buildRestrictions()">
+          Configurar
+        </button>
+      </div>
+    </div>
+    <div id="restrictionsContainer"></div>
+  </div>
+
+  <!-- ── ACTION BAR ── -->
+  <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="solve()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      Resolver y Graficar
+    </button>
+    <button class="btn btn-ghost" onclick="clearAll()">Limpiar todo</button>
+  </div>
+
+  <!-- ── SPINNER ── -->
+  <div class="spinner-wrap" id="spinner">
+    <div class="spinner"></div>
+    <span>Calculando condiciones KKT…</span>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div class="results-area" id="results">
+
+    <!-- Resultado óptimo -->
+    <div class="result-card" id="resultCard">
+      <div class="result-title" id="resultTitle">Punto Óptimo KKT</div>
+      <div class="optimal-row" id="optimalRow"></div>
+      <hr class="sep">
+      <div id="kktSteps"></div>
+    </div>
+
+    <!-- Gráfica -->
+    <div id="plotContainer"></div>
+
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ════════════════════════════════════════════
+//  EJEMPLOS PREDEFINIDOS
+// ════════════════════════════════════════════
+const EXAMPLES = [
+  {
+    obj: "x^2 + y^2 - 6*x - 8*y + 25",
+    rests: [
+      { expr: "x+y-6", sign: ">=", rhs: "0" },
+      { expr: "x",     sign: ">=", rhs: "0" },
+      { expr: "y",     sign: ">=", rhs: "0" },
+    ]
+  },
+  {
+    obj: "x^2 + y^2 - 4*x - 6*y + 13",
+    rests: [
+      { expr: "x",  sign: ">=", rhs: "0" },
+      { expr: "y",  sign: ">=", rhs: "0" },
+    ]
+  },
+  {
+    obj: "(x-3)^2 + (y-2)^2",
+    rests: [
+      { expr: "x+y-4",  sign: ">=", rhs: "0" },
+      { expr: "x-y-1",  sign: "<=", rhs: "0" },
+      { expr: "x",      sign: ">=", rhs: "0" },
+      { expr: "y",      sign: ">=", rhs: "0" },
+    ]
+  },
+  {
+    obj: "x^2 + 2*y^2 - 4*x - 4*y",
+    rests: [
+      { expr: "x+y-4", sign: "<=", rhs: "0" },
+      { expr: "x",     sign: ">=", rhs: "0" },
+      { expr: "y",     sign: ">=", rhs: "0" },
+    ]
+  },
+];
+
+function loadExample(i) {
+  const ex = EXAMPLES[i];
+  document.getElementById('objFunc').value = ex.obj;
+  document.getElementById('numRestrictions').value = ex.rests.length;
+  buildRestrictions();
+  setTimeout(() => {
+    ex.rests.forEach((r, idx) => {
+      document.getElementById(`rest_expr_${idx}`).value = r.expr;
+      document.getElementById(`rest_sign_${idx}`).value = r.sign;
+      document.getElementById(`rest_rhs_${idx}`).value  = r.rhs;
+    });
+  }, 50);
+  updatePreview();
+  hideResults();
+}
+
+// ════════════════════════════════════════════
+//  PREVIEW DE FUNCIÓN
+// ════════════════════════════════════════════
+function updatePreview() {
+  const raw = document.getElementById('objFunc').value.trim();
+  if (!raw) { document.getElementById('funcPreview').textContent = ''; return; }
+  try {
+    const simplified = math.simplify(raw).toString()
+      .replace(/\*/g,'·').replace(/\^2/g,'²').replace(/\^3/g,'³');
+    document.getElementById('funcPreview').textContent = 'f(x,y) = ' + simplified;
+  } catch {
+    document.getElementById('funcPreview').textContent = 'f(x,y) = ' + raw;
+  }
+}
+
+// ════════════════════════════════════════════
+//  CONSTRUIR FILAS DE RESTRICCIONES
+// ════════════════════════════════════════════
+function buildRestrictions() {
+  const n = parseInt(document.getElementById('numRestrictions').value) || 1;
+  const container = document.getElementById('restrictionsContainer');
+  const prev = [];
+  for (let i = 0; i < 8; i++) {
+    const e = document.getElementById(`rest_expr_${i}`);
+    const s = document.getElementById(`rest_sign_${i}`);
+    const r = document.getElementById(`rest_rhs_${i}`);
+    if (e) prev[i] = { expr: e.value, sign: s.value, rhs: r.value };
+  }
+  container.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const row = document.createElement('div');
+    row.className = 'restriction-row';
+    const saved = prev[i] || { expr: '', sign: '>=', rhs: '0' };
+    row.innerHTML = `
+      <span class="rest-index">g${i+1}(x,y)</span>
+      <input type="text" id="rest_expr_${i}" placeholder="ej: x+y-6" value="${saved.expr}">
+      <div class="rest-sign">
+        <select id="rest_sign_${i}">
+          <option value=">=" ${saved.sign==='>='?'selected':''}>≥</option>
+          <option value="<=" ${saved.sign==='<='?'selected':''}>≤</option>
+          <option value="="  ${saved.sign==='='?'selected':''}>  =</option>
+        </select>
+      </div>
+      <div class="rest-rhs">
+        <input type="text" id="rest_rhs_${i}" value="${saved.rhs}" placeholder="0">
+      </div>
+    `;
+    container.appendChild(row);
+  }
+}
+
+// ════════════════════════════════════════════
+//  RESOLVER
+// ════════════════════════════════════════════
+function solve() {
+  hideResults();
+  document.getElementById('spinner').classList.add('active');
+  setTimeout(() => {
+    try { _solve(); }
+    catch(err) { showError(err.message); }
+    document.getElementById('spinner').classList.remove('active');
+  }, 120);
+}
+
+function _solve() {
+  const objStr = document.getElementById('objFunc').value.trim();
+  if (!objStr) throw new Error('Ingresa la función objetivo.');
+
+  const n = parseInt(document.getElementById('numRestrictions').value) || 1;
+  const restrictions = [];
+  for (let i = 0; i < n; i++) {
+    const expr = document.getElementById(`rest_expr_${i}`).value.trim();
+    const sign = document.getElementById(`rest_sign_${i}`).value;
+    const rhs  = document.getElementById(`rest_rhs_${i}`).value.trim();
+    if (!expr) throw new Error(`La restricción ${i+1} está vacía.`);
+    restrictions.push({ expr, sign, rhs: parseFloat(rhs)||0 });
+  }
+
+  // ── 1. Convertir función objetivo a math.js evaluable ──
+  const objF = (x, y) => {
+    try { return math.evaluate(objStr, { x, y }); }
+    catch { return Infinity; }
+  };
+
+  // ── 2. Evaluar restricciones ──
+  const gF = (i, x, y) => {
+    const r = restrictions[i];
+    try { return math.evaluate(r.expr, { x, y }) - r.rhs; }
+    catch { return 0; }
+  };
+  const feasible = (x, y) => restrictions.every((r, i) => {
+    const v = gF(i, x, y);
+    if (r.sign === '>=') return v >= -1e-7;
+    if (r.sign === '<=') return v <=  1e-7;
+    return Math.abs(v) <= 1e-7;
+  });
+
+  // ── 3. Búsqueda numérica del mínimo (gradient descent + grid) ──
+  // Primero hacer un grid amplio para inicializar
+  let bestX = 0, bestY = 0, bestZ = Infinity;
+  const GRID = 60, RANGE = 12;
+  for (let ix = 0; ix <= GRID; ix++) {
+    for (let iy = 0; iy <= GRID; iy++) {
+      const x = -2 + ix * (RANGE / GRID);
+      const y = -2 + iy * (RANGE / GRID);
+      if (!feasible(x, y)) continue;
+      const z = objF(x, y);
+      if (z < bestZ) { bestZ = z; bestX = x; bestY = y; }
+    }
+  }
+
+  // Gradient descent refinado desde el mejor punto del grid
+  let x = bestX, y = bestY;
+  const h = 1e-5;
+  let lr = 0.05;
+  for (let iter = 0; iter < 8000; iter++) {
+    const gx = (objF(x+h,y) - objF(x-h,y)) / (2*h);
+    const gy = (objF(x,y+h) - objF(x,y-h)) / (2*h);
+    let nx = x - lr * gx;
+    let ny = y - lr * gy;
+    // Proyectar al factible si salimos
+    if (!feasible(nx, ny)) {
+      // Intentar con paso menor
+      lr *= 0.5;
+      nx = x - lr * gx;
+      ny = y - lr * gy;
+      if (!feasible(nx, ny)) continue;
+    }
+    if (Math.abs(nx-x) < 1e-9 && Math.abs(ny-y) < 1e-9) break;
+    x = nx; y = ny;
+    if (iter % 500 === 0) lr *= 0.9;
+  }
+  // Verificar si mejoramos
+  if (feasible(x,y) && objF(x,y) < bestZ) {
+    bestX = x; bestY = y; bestZ = objF(x,y);
+  }
+
+  // Además probar vértices de la región factible (intersecciones de restricciones)
+  const vertices = findVertices(restrictions);
+  vertices.forEach(([vx,vy]) => {
+    if (!feasible(vx,vy)) return;
+    const z = objF(vx,vy);
+    if (z < bestZ) { bestZ = z; bestX = vx; bestY = vy; }
+  });
+
+  if (!isFinite(bestZ)) throw new Error('No se encontró solución factible en el dominio explorado.');
+
+  // Redondear a 4 decimales
+  bestX = Math.round(bestX * 1e4) / 1e4;
+  bestY = Math.round(bestY * 1e4) / 1e4;
+  bestZ = Math.round(bestZ * 1e4) / 1e4;
+
+  // ── 4. Condiciones KKT ──
+  const kktInfo = computeKKT(objStr, restrictions, bestX, bestY);
+
+  // ── 5. Mostrar resultados ──
+  showResults(bestX, bestY, bestZ, kktInfo, objStr, restrictions, objF, feasible, gF);
+}
+
+// ════════════════════════════════════════════
+//  VÉRTICES DE LA REGIÓN FACTIBLE
+// ════════════════════════════════════════════
+function findVertices(restrictions) {
+  const pts = [];
+  const n = restrictions.length;
+  // Intersecciones par a par de g_i = 0 y g_j = 0
+  for (let i = 0; i < n; i++) {
+    for (let j = i+1; j < n; j++) {
+      try {
+        const ri = restrictions[i], rj = restrictions[j];
+        // Usar math.js para resolver 2x2 numéricamente
+        const sol = solveLinear2(ri.expr, ri.rhs, rj.expr, rj.rhs);
+        if (sol) pts.push(sol);
+      } catch {}
+    }
+    // También g_i = 0 con x=0 o y=0
+    try {
+      const r = restrictions[i];
+      const y0 = math.evaluate(r.expr, { x: 0, y: 0 });
+      // g_i(0,y)=rhs => evaluar en x=0
+      const yv = solveForY(r.expr, r.rhs, 0);
+      if (yv !== null) pts.push([0, yv]);
+      const xv = solveForX(r.expr, r.rhs, 0);
+      if (xv !== null) pts.push([xv, 0]);
+    } catch {}
+  }
+  pts.push([0,0]);
+  return pts;
+}
+
+function solveLinear2(exprA, rhsA, exprB, rhsB) {
+  // Numérico: buscar intersección con Newton 1D
+  for (let xg = -1; xg <= 12; xg += 0.5) {
+    try {
+      // f(y) = exprA(xg,y) - rhsA = 0
+      let ya = bisect(y => math.evaluate(exprA,{x:xg,y}) - rhsA, -1, 12);
+      if (ya === null) continue;
+      const check = math.evaluate(exprB, {x:xg, y:ya}) - rhsB;
+      if (Math.abs(check) < 0.05) {
+        // refinar con bisect on exprB for x
+        return [xg, ya];
+      }
+    } catch {}
+  }
+  return null;
+}
+function solveForY(expr, rhs, xval) {
+  return bisect(y => { try { return math.evaluate(expr,{x:xval,y}) - rhs; } catch { return null; } }, -1, 12);
+}
+function solveForX(expr, rhs, yval) {
+  return bisect(x => { try { return math.evaluate(expr,{x,y:yval}) - rhs; } catch { return null; } }, -1, 12);
+}
+function bisect(f, a, b, tol=1e-6, maxIter=60) {
+  let fa, fb;
+  try { fa = f(a); fb = f(b); } catch { return null; }
+  if (fa === null || fb === null) return null;
+  if (fa * fb > 0) return null;
+  for (let i = 0; i < maxIter; i++) {
+    const m = (a+b)/2;
+    let fm; try { fm = f(m); } catch { return null; }
+    if (fm === null) return null;
+    if (Math.abs(fm) < tol || (b-a)/2 < tol) return m;
+    if (fa * fm < 0) { b = m; fb = fm; }
+    else { a = m; fa = fm; }
+  }
+  return (a+b)/2;
+}
+
+// ════════════════════════════════════════════
+//  CONDICIONES KKT (simbólico/numérico)
+// ════════════════════════════════════════════
+function computeKKT(objStr, restrictions, x0, y0) {
+  const h = 1e-6;
+  const evalF = (x,y) => { try { return math.evaluate(objStr,{x,y}); } catch { return 0; } };
+  const dFx = (evalF(x0+h,y0) - evalF(x0-h,y0)) / (2*h);
+  const dFy = (evalF(x0,y0+h) - evalF(x0,y0-h)) / (2*h);
+
+  const gradients = restrictions.map(r => {
+    const gE = (x,y) => { try { return math.evaluate(r.expr,{x,y}) - r.rhs; } catch { return 0; } };
+    const dgx = (gE(x0+h,y0) - gE(x0-h,y0)) / (2*h);
+    const dgy = (gE(x0,y0+h) - gE(x0,y0-h)) / (2*h);
+    const gval = gE(x0, y0);
+    return { dgx, dgy, gval, expr: r.expr, sign: r.sign, rhs: r.rhs };
+  });
+
+  // Determinar restricciones activas
+  const active = gradients.filter(g => Math.abs(g.gval) < 1e-3);
+
+  // Calcular multiplicadores λ (para restricciones activas)
+  let lambdas = [];
+  if (active.length === 1) {
+    const g = active[0];
+    const denom = g.dgx**2 + g.dgy**2;
+    if (denom > 1e-10) {
+      const lx = -dFx / g.dgx;
+      const ly = -dFy / g.dgy;
+      lambdas = [{ lambda: (lx+ly)/2, g }];
+    }
+  } else if (active.length >= 2) {
+    // Sistema 2x2 con primeras 2 activas
+    const g1 = active[0], g2 = active[1];
+    const det = g1.dgx*g2.dgy - g1.dgy*g2.dgx;
+    if (Math.abs(det) > 1e-10) {
+      const l1 = (-dFx*g2.dgy + dFy*g2.dgx) / det;
+      const l2 = (-dFy*g1.dgx + dFx*g1.dgy) / det;
+      lambdas = [
+        { lambda: l1, g: g1 },
+        { lambda: l2, g: g2 },
+      ];
+    }
+  }
+
+  return { dFx, dFy, gradients, active, lambdas };
+}
+
+// ════════════════════════════════════════════
+//  MOSTRAR RESULTADOS
+// ════════════════════════════════════════════
+function showResults(bx, by, bz, kkt, objStr, restrictions, objF, feasible, gF) {
+  // Óptimo
+  document.getElementById('optimalRow').innerHTML = `
+    <div class="optimal-chip">
+      <div class="val">x* = ${bx}</div>
+      <div class="lbl">Coordenada x óptima</div>
+    </div>
+    <div class="optimal-chip">
+      <div class="val">y* = ${by}</div>
+      <div class="lbl">Coordenada y óptima</div>
+    </div>
+    <div class="optimal-chip" style="border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.08)">
+      <div class="val" style="color:var(--cyan)">f* = ${bz}</div>
+      <div class="lbl">Mínimo de la función</div>
+    </div>
+  `;
+
+  // Pasos KKT
+  let stepsHTML = `<p class="section-label">Condiciones KKT</p><div class="kkt-steps">`;
+
+  // Paso 1: Lagrangiano
+  const lagDesc = buildLagrangian(objStr, restrictions);
+  stepsHTML += `
+    <div class="kkt-step">
+      <div class="kkt-step-title">Paso 1 — Función Lagrangiana</div>
+      <div class="kkt-step-body">${lagDesc}</div>
+    </div>`;
+
+  // Paso 2: Gradiente en óptimo
+  stepsHTML += `
+    <div class="kkt-step">
+      <div class="kkt-step-title">Paso 2 — Gradiente de f en el punto óptimo</div>
+      <div class="kkt-step-body">∂f/∂x (${bx}, ${by}) = ${kkt.dFx.toFixed(4)}
+∂f/∂y (${bx}, ${by}) = ${kkt.dFy.toFixed(4)}</div>
+    </div>`;
+
+  // Paso 3: Restricciones activas
+  const activeStr = kkt.active.length > 0
+    ? kkt.active.map((g,i) => `  g(x,y) = ${g.expr} − ${g.rhs} = 0  →  ACTIVA`).join('\n')
+    : '  Ninguna restricción activa en el punto óptimo (interior)';
+  stepsHTML += `
+    <div class="kkt-step">
+      <div class="kkt-step-title">Paso 3 — Restricciones activas</div>
+      <div class="kkt-step-body">${activeStr}</div>
+    </div>`;
+
+  // Paso 4: Multiplicadores
+  if (kkt.lambdas.length > 0) {
+    const lambdaStr = kkt.lambdas.map((l,i) =>
+      `  λ${i+1} = ${l.lambda.toFixed(4)}  ${l.lambda >= -1e-4 ? '≥ 0 ✓' : '< 0 — verificar'}`
+    ).join('\n');
+    stepsHTML += `
+      <div class="kkt-step">
+        <div class="kkt-step-title">Paso 4 — Multiplicadores de KKT (λ)</div>
+        <div class="kkt-step-body">${lambdaStr}</div>
+      </div>`;
+  }
+
+  // Paso 5: Verificación de holgura complementaria
+  const csLines = restrictions.map((r, i) => {
+    const gv = gF(i, bx, by);
+    return `  g${i+1}(${bx},${by}) = ${gv.toFixed(4)}  →  holgura = ${Math.abs(gv).toFixed(4)} ${Math.abs(gv)<1e-3?'(activa)':'(inactiva)'}`;
+  }).join('\n');
+  stepsHTML += `
+    <div class="kkt-step">
+      <div class="kkt-step-title">Paso 5 — Holgura complementaria λᵢ · gᵢ = 0</div>
+      <div class="kkt-step-body">${csLines}</div>
+    </div>`;
+
+  stepsHTML += '</div>';
+
+  document.getElementById('kktSteps').innerHTML = stepsHTML;
+  document.getElementById('resultCard').classList.remove('error');
+  document.getElementById('resultTitle').classList.remove('error');
+  document.getElementById('resultTitle').textContent = 'Punto Óptimo KKT';
+
+  // Gráfica
+  plotSolution(bx, by, bz, objStr, restrictions, objF, feasible, gF);
+
+  document.getElementById('results').classList.add('visible');
+  setTimeout(() => document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+}
+
+function buildLagrangian(objStr, restrictions) {
+  let s = `L(x, y, λ) = ${objStr}`;
+  restrictions.forEach((r, i) => {
+    const sign = r.sign === '<=' ? '+' : '−';
+    s += `\n  ${sign} λ${i+1}·(${r.expr}${r.rhs !== 0 ? ' − '+r.rhs : ''})`;
+  });
+  return s;
+}
+
+function showError(msg) {
+  document.getElementById('optimalRow').innerHTML = `<p style="color:var(--red);font-size:14px">⚠ ${msg}</p>`;
+  document.getElementById('kktSteps').innerHTML = '';
+  document.getElementById('resultCard').classList.add('error');
+  document.getElementById('resultTitle').classList.add('error');
+  document.getElementById('resultTitle').textContent = 'Error en el cálculo';
+  document.getElementById('plotContainer').innerHTML = '';
+  document.getElementById('results').classList.add('visible');
+}
+
+function hideResults() {
+  document.getElementById('results').classList.remove('visible');
+}
+
+function clearAll() {
+  document.getElementById('objFunc').value = '';
+  document.getElementById('funcPreview').textContent = '';
+  buildRestrictions();
+  hideResults();
+}
+
+// ════════════════════════════════════════════
+//  GRÁFICA PLOTLY
+// ════════════════════════════════════════════
+function plotSolution(bx, by, bz, objStr, restrictions, objF, feasible, gF) {
+  const container = document.getElementById('plotContainer');
+  container.innerHTML = '';
+
+  // Rango de la gráfica
+  const cx = bx, cy = by;
+  const pad = 5;
+  const xmin = Math.max(-1, cx - pad), xmax = cx + pad + 1;
+  const ymin = Math.max(-1, cy - pad), ymax = cy + pad + 1;
+
+  const NX = 120, NY = 120;
+  const xs = linspace(xmin, xmax, NX);
+  const ys = linspace(ymin, ymax, NY);
+
+  // Superficie de la función objetivo (contour)
+  const zData = [];
+  const zFeas = [];
+  for (let j = 0; j < NY; j++) {
+    const row = [], rowF = [];
+    for (let i = 0; i < NX; i++) {
+      const z = objF(xs[i], ys[j]);
+      row.push(z);
+      rowF.push(feasible(xs[i], ys[j]) ? z : null);
+    }
+    zData.push(row);
+    zFeas.push(rowF);
+  }
+
+  // Traza 1: Contornos completos (tenues)
+  const traceContour = {
+    type: 'contour', x: xs, y: ys, z: zData,
+    colorscale: [
+      [0,   'rgba(0,212,255,0.05)'],
+      [0.3, 'rgba(124,58,237,0.12)'],
+      [0.7, 'rgba(124,58,237,0.25)'],
+      [1,   'rgba(255,78,106,0.2)']
+    ],
+    showscale: false, contours: { showlabels: false, coloring: 'fill' },
+    line: { width: 0.4, color: 'rgba(255,255,255,0.08)' },
+    name: 'f(x,y)', hoverinfo: 'skip',
+    opacity: 0.6,
+    ncontours: 20,
+  };
+
+  // Traza 2: Contornos región factible (más vivos)
+  const traceFeasible = {
+    type: 'contour', x: xs, y: ys, z: zFeas,
+    colorscale: [
+      [0,   'rgba(16,255,171,0.08)'],
+      [0.5, 'rgba(0,212,255,0.18)'],
+      [1,   'rgba(0,212,255,0.30)']
+    ],
+    showscale: true,
+    colorbar: {
+      title: { text: 'f(x,y)', font: { color: '#6B7FA8', size: 11 } },
+      tickfont: { color: '#6B7FA8', size: 10 },
+      bgcolor: 'rgba(0,0,0,0)',
+      bordercolor: 'rgba(0,212,255,0.2)',
+      len: 0.7,
+    },
+    contours: { showlabels: true, labelfont: { size:10, color:'rgba(200,220,255,0.7)' }, coloring: 'fill' },
+    line: { width: 1, color: 'rgba(0,212,255,0.25)' },
+    name: 'Región factible', hoverinfo: 'skip',
+    ncontours: 14,
+  };
+
+  // Traza 3: Líneas de restricciones
+  const restTraces = [];
+  const restColors = ['#A78BFA','#00D4FF','#10FFAB','#FF4E6A','#FFB627','#FF6EFF'];
+  restrictions.forEach((r, i) => {
+    const lineX = [], lineY = [];
+    // Calcular isocurva g_i = 0
+    for (let k = 0; k < NX; k++) {
+      const x = xs[k];
+      const yv = bisect(y => { try { return math.evaluate(r.expr,{x,y}) - r.rhs; } catch { return 0; } }, ymin-1, ymax+1);
+      if (yv !== null && yv >= ymin && yv <= ymax) {
+        lineX.push(x); lineY.push(yv);
+      }
+    }
+    if (lineX.length > 1) {
+      restTraces.push({
+        type: 'scatter', mode: 'lines',
+        x: lineX, y: lineY,
+        name: `g${i+1}: ${r.expr} ${r.sign} ${r.rhs}`,
+        line: { color: restColors[i % restColors.length], width: 2, dash: 'dash' },
+        hoverinfo: 'name',
+      });
+    }
+  });
+
+  // Traza 4: Punto óptimo
+  const traceOpt = {
+    type: 'scatter', mode: 'markers+text',
+    x: [bx], y: [by],
+    text: [`  (${bx}, ${by})`],
+    textposition: 'middle right',
+    textfont: { color: '#10FFAB', size: 13, family: 'JetBrains Mono' },
+    marker: {
+      size: 14, color: '#10FFAB',
+      symbol: 'star', line: { width: 2, color: '#fff' }
+    },
+    name: `Óptimo: f* = ${bz}`,
+    hovertemplate: `<b>Punto Óptimo</b><br>x* = ${bx}<br>y* = ${by}<br>f* = ${bz}<extra></extra>`
+  };
+
+  const layout = {
+    paper_bgcolor: 'rgba(13,21,48,0)',
+    plot_bgcolor:  'rgba(8,14,31,0.95)',
+    font: { family: 'Inter, sans-serif', color: '#6B7FA8' },
+    xaxis: {
+      title: { text: 'x', font: { color:'#6B7FA8' } },
+      range: [xmin, xmax],
+      gridcolor: 'rgba(0,212,255,0.06)',
+      zerolinecolor: 'rgba(0,212,255,0.2)',
+      tickfont: { color: '#6B7FA8', size:11 },
+    },
+    yaxis: {
+      title: { text: 'y', font: { color:'#6B7FA8' } },
+      range: [ymin, ymax],
+      gridcolor: 'rgba(0,212,255,0.06)',
+      zerolinecolor: 'rgba(0,212,255,0.2)',
+      tickfont: { color: '#6B7FA8', size:11 },
+    },
+    legend: {
+      bgcolor: 'rgba(13,21,48,0.85)',
+      bordercolor: 'rgba(0,212,255,0.2)',
+      borderwidth: 1,
+      font: { color: '#A0AFC0', size: 11 },
+      x: 0.01, y: 0.99,
+    },
+    margin: { t: 30, b: 50, l: 55, r: 30 },
+    height: 460,
+  };
+
+  Plotly.newPlot(
+    container,
+    [traceContour, traceFeasible, ...restTraces, traceOpt],
+    layout,
+    { responsive: true, displayModeBar: true,
+      modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d'],
+      displaylogo: false }
+  );
+}
+
+function linspace(a, b, n) {
+  const arr = [];
+  for (let i = 0; i < n; i++) arr.push(a + i * (b-a) / (n-1));
+  return arr;
+}
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+buildRestrictions();
+updatePreview();
+</script>
+</body>
+</html>

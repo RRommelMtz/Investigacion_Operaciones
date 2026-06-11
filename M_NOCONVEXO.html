@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programación No Convexa — Analizador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-base:      #0c0f1a;
+    --bg-surface:   #131929;
+    --bg-card:      #192033;
+    --bg-input:     #1e2843;
+    --border:       #2a3a5c;
+    --border-focus: #6d5acd;
+    --purple:       #8b5cf6;
+    --purple-light: #a78bfa;
+    --cyan:         #06b6d4;
+    --cyan-light:   #67e8f9;
+    --amber:        #f59e0b;
+    --green:        #10b981;
+    --red:          #ef4444;
+    --text-primary: #e2e8f0;
+    --text-secondary:#94a3b8;
+    --text-muted:   #4a5a7a;
+    --mono:         'JetBrains Mono', monospace;
+    --sans:         'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    padding: 2.5rem 2.5rem 2rem;
+    background: linear-gradient(135deg, #131929 0%, #0c0f1a 60%);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(139,92,246,.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 40%;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(6,182,212,.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-eyebrow {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-family: var(--mono); font-size: .7rem; font-weight: 500;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: .8rem;
+  }
+  .header-eyebrow span { width: 20px; height: 1px; background: var(--cyan); display: block; }
+  header h1 {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 700; letter-spacing: -.02em;
+    background: linear-gradient(90deg, var(--purple-light), var(--cyan-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: .6rem;
+  }
+  header p {
+    font-size: .9rem; color: var(--text-secondary);
+    max-width: 620px; line-height: 1.6;
+  }
+
+  /* LAYOUT */
+  .workspace {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    grid-template-rows: auto auto;
+    gap: 0;
+    min-height: calc(100vh - 160px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    grid-row: 1 / 3;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 1.4rem;
+    overflow-y: auto;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+  }
+  .card-title {
+    font-size: .72rem; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .card-title svg { flex-shrink: 0; }
+
+  /* EXPRESSIONS HELP */
+  .expr-list { list-style: none; display: flex; flex-direction: column; gap: .45rem; }
+  .expr-list li {
+    font-family: var(--mono); font-size: .75rem;
+    color: var(--text-secondary);
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .expr-list li::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--purple); flex-shrink: 0;
+  }
+
+  /* FORM */
+  .field { display: flex; flex-direction: column; gap: .4rem; }
+  .field label {
+    font-size: .75rem; font-weight: 600;
+    letter-spacing: .04em; color: var(--text-secondary);
+  }
+  .field input,
+  .field select {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: .6rem .8rem;
+    font-family: var(--mono); font-size: .85rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .field input:focus,
+  .field select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(109,90,205,.18);
+  }
+  .field select { cursor: pointer; }
+
+  /* num-restrictions inline row */
+  .num-restr-row {
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .num-restr-row button {
+    width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg-input); color: var(--text-primary);
+    font-size: 1.1rem; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .2s;
+    flex-shrink: 0;
+  }
+  .num-restr-row button:hover { border-color: var(--purple); }
+  .num-restr-row input[type="number"] {
+    width: 52px; text-align: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: .45rem .3rem;
+    font-family: var(--mono); font-size: .9rem;
+    color: var(--text-primary); outline: none;
+  }
+  .num-restr-row input[type="number"]::-webkit-inner-spin-button,
+  .num-restr-row input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .restriction-row {
+    display: grid; grid-template-columns: auto 1fr;
+    align-items: center; gap: .5rem;
+  }
+  .restriction-label {
+    font-family: var(--mono); font-size: .72rem;
+    color: var(--text-secondary); white-space: nowrap;
+  }
+  .restriction-row input {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .45rem .65rem;
+    font-family: var(--mono); font-size: .8rem;
+    color: var(--text-primary); outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+  .restriction-row input:focus { border-color: var(--border-focus); }
+
+  #restrictions-container { display: flex; flex-direction: column; gap: .5rem; }
+
+  .btn-run {
+    width: 100%; padding: .8rem;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    border: none; border-radius: 8px;
+    font-family: var(--sans); font-size: .9rem; font-weight: 600;
+    color: #fff; cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    letter-spacing: .02em;
+  }
+  .btn-run:hover { opacity: .9; }
+  .btn-run:active { transform: scale(.98); }
+
+  /* CHART AREA */
+  .chart-area {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem 1.2rem;
+    position: relative;
+  }
+  .chart-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 0%, rgba(6,182,212,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 30% 100%, rgba(139,92,246,0.05) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem;
+  }
+  .chart-title {
+    font-size: .95rem; font-weight: 600;
+    color: var(--text-primary);
+  }
+  .chart-badges { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: flex; align-items: center; gap: .35rem;
+    font-size: .7rem; font-family: var(--mono);
+    color: var(--text-secondary);
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 4px; padding: .25rem .55rem;
+  }
+  .badge-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .canvas-wrap {
+    position: relative;
+    width: 100%; height: 400px;
+  }
+  canvas#chart { width: 100% !important; height: 100% !important; }
+
+  /* RESULTS */
+  .results-area {
+    background: var(--bg-base);
+    padding: 1.5rem 2rem;
+  }
+
+  .results-title {
+    font-size: .72rem; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--purple); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: .8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .result-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: border-color .2s;
+  }
+  .result-card.highlight { border-color: var(--purple); }
+  .result-card-label {
+    font-size: .68rem; font-weight: 500;
+    letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: .35rem;
+  }
+  .result-card-value {
+    font-family: var(--mono); font-size: 1.15rem; font-weight: 700;
+    color: var(--text-primary);
+  }
+  .result-card-value.purple { color: var(--purple-light); }
+  .result-card-value.cyan   { color: var(--cyan-light); }
+  .result-card-value.amber  { color: var(--amber); }
+  .result-card-value.green  { color: var(--green); }
+
+  /* ANALYSIS TABLE */
+  .analysis-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .analysis-wrap table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .analysis-wrap th {
+    background: var(--bg-input);
+    padding: .6rem .9rem;
+    text-align: left; font-weight: 600;
+    font-size: .68rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-muted); border-bottom: 1px solid var(--border);
+  }
+  .analysis-wrap td {
+    padding: .55rem .9rem;
+    border-bottom: 1px solid rgba(42,58,92,.5);
+    font-family: var(--mono); color: var(--text-secondary);
+  }
+  .analysis-wrap tr:last-child td { border-bottom: none; }
+  .analysis-wrap tr:hover td { background: rgba(255,255,255,.02); }
+  td.tag-local  { color: var(--amber); }
+  td.tag-global { color: var(--green); }
+  td.tag-bound  { color: var(--cyan); }
+  td.tag-saddle { color: var(--red); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+  .empty-state svg { opacity: .3; margin-bottom: 1rem; }
+  .empty-state p { font-size: .85rem; }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex; align-items: center; gap: .6rem;
+    font-size: .75rem; font-family: var(--mono);
+    color: var(--text-muted); margin-top: .6rem;
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+  .status-dot.ready   { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.running { background: var(--amber); animation: pulse 1s infinite; }
+  .status-dot.error   { background: var(--red); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* RESPONSIVE */
+  @media (max-width: 860px) {
+    .workspace { grid-template-columns: 1fr; }
+    .sidebar { grid-row: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    header { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-eyebrow"><span></span> Investigación de Operaciones</div>
+  <h1>Programación No Convexa</h1>
+  <p>Analiza funciones objetivo no convexas, detecta óptimos locales y globales bajo restricciones, y visualiza la región factible con exploración matemática avanzada.</p>
+</header>
+
+<div class="workspace">
+
+  <aside class="sidebar">
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        Sintaxis Permitida
+      </div>
+      <ul class="expr-list">
+        <li>x^2, x^3, x^4, x^n</li>
+        <li>sin(x), cos(x), tan(x)</li>
+        <li>exp(x), log(x), sqrt(x)</li>
+        <li>abs(x), ceil(x), floor(x)</li>
+        <li>Operadores: + − * / ^</li>
+        <li>Restricciones: a &lt;= x &lt;= b</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Configuración del Modelo
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.9rem;">
+
+        <div class="field">
+          <label>Función Objetivo f(x)</label>
+          <input type="text" id="func-input" value="x^3 - 6*x^2 + 9*x + 1" placeholder="ej. x^3 - 6*x^2 + 9*x">
+        </div>
+
+        <div class="field">
+          <label>Tipo de Optimización</label>
+          <select id="opt-type">
+            <option value="max">Maximización</option>
+            <option value="min">Minimización</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>¿Usar Restricciones?</label>
+          <select id="use-restrictions" onchange="toggleRestrictions()">
+            <option value="no">No</option>
+            <option value="yes">Sí</option>
+          </select>
+        </div>
+
+        <div id="restriction-section" style="display:none; flex-direction:column; gap:.7rem;">
+          <div class="field">
+            <label>Número de Restricciones</label>
+            <div class="num-restr-row">
+              <button type="button" onclick="changeNumRestr(-1)">−</button>
+              <input type="number" id="num-restrictions" value="1" min="1" max="8" oninput="buildRestrictions()">
+              <button type="button" onclick="changeNumRestr(1)">+</button>
+            </div>
+          </div>
+          <div id="restrictions-container"></div>
+        </div>
+
+        <div class="field">
+          <label>Precisión (puntos de muestra)</label>
+          <select id="precision">
+            <option value="500">Normal (500)</option>
+            <option value="1000" selected>Alta (1000)</option>
+            <option value="2000">Muy alta (2000)</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <button class="btn-run" onclick="runOptimization()">▶ Ejecutar Modelo</button>
+
+    <div class="status-bar">
+      <div class="status-dot ready" id="status-dot"></div>
+      <span id="status-text">Listo para ejecutar</span>
+    </div>
+
+  </aside>
+
+  <section class="chart-area">
+    <div class="chart-header">
+      <span class="chart-title">Visualización del Modelo</span>
+      <div class="chart-badges">
+        <span class="badge"><span class="badge-dot" style="background:linear-gradient(135deg,#06b6d4,#0891b2)"></span>Función f(x)</span>
+        <span class="badge">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;border-radius:50%;background:rgba(16,185,129,0.2);border:2px solid #10b981"></span>
+          &nbsp;Óptimo Global
+        </span>
+        <span class="badge">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:10px;height:10px;border-radius:50%;background:#0c0f1a;border:2px solid #f59e0b"></span>
+          &nbsp;Óptimo Local
+        </span>
+        <span class="badge"><span class="badge-dot" style="background:rgba(139,92,246,.55)"></span>Región Factible</span>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+  </section>
+
+  <section class="results-area">
+    <div class="results-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Resultados del Análisis
+    </div>
+    <div id="results-content">
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></svg>
+        <p>Configura el modelo y pulsa <strong>Ejecutar Modelo</strong> para ver el análisis.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ── CHART ────────────────────────────────────────────────────
+let myChart = null;
+const chartCtx = document.getElementById('chart').getContext('2d');
+
+function initChart(funcData, feasibleCurve, optPoints, localPoints, restrLines) {
+  if (myChart) myChart.destroy();
+
+  const canvas = document.getElementById('chart');
+
+  // ── Cyan gradient fill under the main curve ──
+  const gradFill = chartCtx.createLinearGradient(0, 0, 0, canvas.clientHeight || 400);
+  gradFill.addColorStop(0,   'rgba(6,182,212,0.22)');
+  gradFill.addColorStop(0.5, 'rgba(6,182,212,0.07)');
+  gradFill.addColorStop(1,   'rgba(6,182,212,0.0)');
+
+  // ── Feasible region gradient ──
+  const gradFeasible = chartCtx.createLinearGradient(0, 0, 0, canvas.clientHeight || 400);
+  gradFeasible.addColorStop(0,   'rgba(139,92,246,0.28)');
+  gradFeasible.addColorStop(1,   'rgba(139,92,246,0.04)');
+
+  const datasets = [];
+
+  // 1. Feasible region shading (behind curve)
+  if (feasibleCurve.length > 0) {
+    datasets.push({
+      label: 'Región Factible',
+      data: feasibleCurve,
+      borderColor: 'rgba(139,92,246,0.5)',
+      borderWidth: 1,
+      borderDash: [],
+      pointRadius: 0,
+      backgroundColor: gradFeasible,
+      fill: 'origin',
+      tension: 0.35,
+      order: 5,
+    });
+  }
+
+  // 2. Main function curve with gradient fill
+  datasets.push({
+    label: 'f(x)',
+    data: funcData,
+    borderColor: '#06b6d4',
+    borderWidth: 2.5,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: '#06b6d4',
+    tension: 0.35,
+    backgroundColor: gradFill,
+    fill: 'origin',
+    order: 3,
+  });
+
+  // 3. Local optima — pulsing ring style
+  if (localPoints.length > 0) {
+    datasets.push({
+      label: 'Óptimo Local',
+      data: localPoints,
+      borderColor: '#f59e0b',
+      borderWidth: 2.5,
+      backgroundColor: '#0c0f1a',
+      pointRadius: 7,
+      pointHoverRadius: 10,
+      pointStyle: 'circle',
+      showLine: false,
+      order: 1,
+    });
+  }
+
+  // 4. Global optimum — bright filled circle + outer ring
+  if (optPoints.length > 0) {
+    // Outer glow ring
+    datasets.push({
+      label: '_glow',
+      data: optPoints,
+      borderColor: 'rgba(16,185,129,0.3)',
+      borderWidth: 8,
+      backgroundColor: 'transparent',
+      pointRadius: 14,
+      pointHoverRadius: 16,
+      pointStyle: 'circle',
+      showLine: false,
+      order: 2,
+    });
+    // Inner solid dot
+    datasets.push({
+      label: 'Óptimo Global',
+      data: optPoints,
+      borderColor: '#10b981',
+      borderWidth: 2,
+      backgroundColor: '#10b981',
+      pointRadius: 6,
+      pointHoverRadius: 8,
+      pointStyle: 'circle',
+      showLine: false,
+      order: 0,
+    });
+  }
+
+  // 5. Restriction vertical lines (via annotation plugin)
+  const lineColors = ['#8b5cf6','#ef4444','#f59e0b','#ec4899','#84cc16','#f97316','#a78bfa','#06b6d4'];
+  const annotations = {};
+
+  restrLines.forEach((xVal, i) => {
+    annotations[`restr${i}`] = {
+      type: 'line',
+      xMin: xVal,
+      xMax: xVal,
+      borderColor: lineColors[i % lineColors.length],
+      borderWidth: 1.5,
+      borderDash: [6, 4],
+      label: {
+        display: true,
+        content: `R${i+1}: x=${xVal % 1 === 0 ? xVal : xVal.toFixed(2)}`,
+        position: 'start',
+        yAdjust: -6,
+        backgroundColor: 'rgba(12,15,26,0.85)',
+        color: lineColors[i % lineColors.length],
+        font: { family: 'JetBrains Mono, monospace', size: 10, weight: '600' },
+        padding: { x: 6, y: 3 },
+        borderRadius: 4,
+      }
+    };
+  });
+
+  // Annotation for global optimum label
+  if (optPoints.length > 0) {
+    annotations['optLabel'] = {
+      type: 'label',
+      xValue: optPoints[0].x,
+      yValue: optPoints[0].y,
+      xAdjust: 0,
+      yAdjust: -26,
+      backgroundColor: 'rgba(16,185,129,0.15)',
+      borderColor: 'rgba(16,185,129,0.5)',
+      borderWidth: 1,
+      borderRadius: 5,
+      color: '#10b981',
+      content: [`x* = ${optPoints[0].x.toFixed(4)}`, `f(x*) = ${optPoints[0].y.toFixed(4)}`],
+      font: { family: 'JetBrains Mono, monospace', size: 10, weight: '600' },
+      padding: { x: 8, y: 5 },
+    };
+    // Dashed drop-lines from optimum to axes
+    annotations['dropX'] = {
+      type: 'line',
+      xMin: optPoints[0].x, xMax: optPoints[0].x,
+      yMin: undefined, yMax: optPoints[0].y,
+      borderColor: 'rgba(16,185,129,0.25)',
+      borderWidth: 1,
+      borderDash: [3, 3],
+    };
+    annotations['dropY'] = {
+      type: 'line',
+      yMin: optPoints[0].y, yMax: optPoints[0].y,
+      borderColor: 'rgba(16,185,129,0.25)',
+      borderWidth: 1,
+      borderDash: [3, 3],
+    };
+  }
+
+  // Annotations for local optima labels
+  localPoints.forEach((pt, i) => {
+    annotations[`localLabel${i}`] = {
+      type: 'label',
+      xValue: pt.x,
+      yValue: pt.y,
+      xAdjust: 0,
+      yAdjust: -24,
+      backgroundColor: 'rgba(245,158,11,0.12)',
+      borderColor: 'rgba(245,158,11,0.4)',
+      borderWidth: 1,
+      borderRadius: 4,
+      color: '#f59e0b',
+      content: `x=${pt.x.toFixed(3)}`,
+      font: { family: 'JetBrains Mono, monospace', size: 9, weight: '500' },
+      padding: { x: 6, y: 3 },
+    };
+  });
+
+  myChart = new Chart(chartCtx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 700,
+        easing: 'easeInOutCubic',
+      },
+      parsing: { xAxisKey: 'x', yAxisKey: 'y' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        annotation: { annotations },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(19,25,41,0.97)',
+          borderColor: 'rgba(139,92,246,0.4)',
+          borderWidth: 1,
+          titleColor: '#a78bfa',
+          bodyColor: '#e2e8f0',
+          footerColor: '#4a5a7a',
+          padding: { x: 12, y: 10 },
+          cornerRadius: 8,
+          titleFont: { family: 'JetBrains Mono, monospace', size: 11, weight: '600' },
+          bodyFont:  { family: 'JetBrains Mono, monospace', size: 12 },
+          caretSize: 6,
+          callbacks: {
+            title(items) {
+              if (!items.length) return '';
+              return `x = ${parseFloat(items[0].label).toFixed(4)}`;
+            },
+            label(ctx) {
+              if (ctx.dataset.label?.startsWith('_')) return null;
+              if (ctx.parsed.y == null || Math.abs(ctx.parsed.y) > 1e8) return null;
+              const icons = { 'f(x)': '▸', 'Óptimo Global': '★', 'Óptimo Local': '◆', 'Región Factible': '▒' };
+              const icon = icons[ctx.dataset.label] || '·';
+              return `  ${icon} ${ctx.dataset.label}:  ${ctx.parsed.y.toFixed(5)}`;
+            },
+            afterBody(items) {
+              const mainItem = items.find(i => i.dataset.label === 'f(x)');
+              if (!mainItem) return [];
+              return ['', `  f(${parseFloat(mainItem.label).toFixed(3)}) = ${mainItem.parsed.y.toFixed(5)}`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: {
+            display: true,
+            text: 'x',
+            color: '#64748b',
+            font: { family: 'JetBrains Mono, monospace', size: 12, weight: '500' },
+            padding: { top: 8 }
+          },
+          grid: {
+            color: (ctx) => ctx.tick.value === 0
+              ? 'rgba(148,163,184,0.25)'
+              : 'rgba(42,58,92,0.35)',
+            lineWidth: (ctx) => ctx.tick.value === 0 ? 1.5 : 1,
+          },
+          ticks: {
+            color: '#4a5a7a',
+            font: { family: 'JetBrains Mono, monospace', size: 10 },
+            maxTicksLimit: 10,
+          },
+          border: { color: 'rgba(42,58,92,0.6)', width: 1 }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'f(x)',
+            color: '#64748b',
+            font: { family: 'JetBrains Mono, monospace', size: 12, weight: '500' },
+            padding: { bottom: 8 }
+          },
+          grid: {
+            color: (ctx) => ctx.tick.value === 0
+              ? 'rgba(148,163,184,0.25)'
+              : 'rgba(42,58,92,0.35)',
+            lineWidth: (ctx) => ctx.tick.value === 0 ? 1.5 : 1,
+          },
+          ticks: {
+            color: '#4a5a7a',
+            font: { family: 'JetBrains Mono, monospace', size: 10 },
+            maxTicksLimit: 8,
+            callback: (v) => v.toFixed(1),
+          },
+          border: { color: 'rgba(42,58,92,0.6)', width: 1 }
+        }
+      }
+    }
+  });
+}
+
+// ── RESTRICTION UI ───────────────────────────────────────────
+function toggleRestrictions() {
+  const use = document.getElementById('use-restrictions').value;
+  const sec = document.getElementById('restriction-section');
+  sec.style.display = use === 'yes' ? 'flex' : 'none';
+  if (use === 'yes') buildRestrictions();
+}
+
+function changeNumRestr(delta) {
+  const inp = document.getElementById('num-restrictions');
+  let val = parseInt(inp.value) + delta;
+  val = Math.max(1, Math.min(8, val));
+  inp.value = val;
+  buildRestrictions();
+}
+
+function buildRestrictions() {
+  const raw = document.getElementById('num-restrictions').value;
+  let n = parseInt(raw);
+  if (isNaN(n) || n < 1) n = 1;
+  if (n > 8) n = 8;
+  document.getElementById('num-restrictions').value = n;
+
+  const defaults = ['0 <= x <= 5', 'x <= 4', 'x >= 1', 'x <= 3', '0 <= x <= 6', 'x >= 0', 'x <= 2', 'x >= -1'];
+  const container = document.getElementById('restrictions-container');
+
+  // Preserve existing values
+  const existing = [];
+  for (let i = 0; i < 8; i++) {
+    const el = document.getElementById('r' + i);
+    existing.push(el ? el.value : '');
+  }
+
+  container.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const row = document.createElement('div');
+    row.className = 'restriction-row';
+    const val = existing[i] || defaults[i] || '0 <= x <= 5';
+    row.innerHTML = `
+      <span class="restriction-label">R${i+1}</span>
+      <input type="text" id="r${i}" value="${val}" placeholder="ej. 0 <= x <= 5">
+    `;
+    container.appendChild(row);
+  }
+}
+
+// ── MATH EVALUATOR ───────────────────────────────────────────
+function safeEval(expr, xVal) {
+  try {
+    // Normalize the expression
+    let e = expr.trim();
+    // Replace ^ with ** (power)
+    e = e.replace(/\^/g, '**');
+    // Handle implicit multiplication: 2x -> 2*x, )x -> )*x, x( -> x*(
+    e = e.replace(/(\d)(x)/g, '$1*$2');
+    e = e.replace(/\)(x)/g, ')*$2');
+    e = e.replace(/(x)\(/g, '$1*(');
+    // Replace math functions
+    e = e.replace(/\bsin\b/g, 'Math.sin');
+    e = e.replace(/\bcos\b/g, 'Math.cos');
+    e = e.replace(/\btan\b/g, 'Math.tan');
+    e = e.replace(/\bexp\b/g, 'Math.exp');
+    e = e.replace(/\bln\b/g,  'Math.log');
+    e = e.replace(/\blog\b/g, 'Math.log');
+    e = e.replace(/\bsqrt\b/g,'Math.sqrt');
+    e = e.replace(/\babs\b/g, 'Math.abs');
+    e = e.replace(/\bceil\b/g,'Math.ceil');
+    e = e.replace(/\bfloor\b/g,'Math.floor');
+    // Replace x with its value
+    e = e.replace(/\bx\b/g, '(' + xVal + ')');
+    const result = Function('"use strict"; return (' + e + ')')();
+    return isFinite(result) ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── RESTRICTION PARSER ───────────────────────────────────────
+// Returns { xMin, xMax } or null if parse fails.
+function parseRestriction(raw) {
+  const s = raw.trim().replace(/\s+/g, ' ');
+  if (!s) return null;
+
+  // a <= x <= b   or   a < x < b   or mixed
+  let m = s.match(/^([+-]?\d*\.?\d+)\s*<[=]?\s*x\s*<[=]?\s*([+-]?\d*\.?\d+)$/i);
+  if (m) return { xMin: parseFloat(m[1]), xMax: parseFloat(m[2]) };
+
+  // x <= b   or   x < b
+  m = s.match(/^x\s*<[=]?\s*([+-]?\d*\.?\d+)$/i);
+  if (m) return { xMin: -Infinity, xMax: parseFloat(m[1]) };
+
+  // x >= a   or   x > a
+  m = s.match(/^x\s*>[=]?\s*([+-]?\d*\.?\d+)$/i);
+  if (m) return { xMin: parseFloat(m[1]), xMax: Infinity };
+
+  // b >= x (reverse)
+  m = s.match(/^([+-]?\d*\.?\d+)\s*>[=]?\s*x$/i);
+  if (m) return { xMin: -Infinity, xMax: parseFloat(m[1]) };
+
+  // a <= x (reverse lower bound)
+  m = s.match(/^([+-]?\d*\.?\d+)\s*<[=]?\s*x$/i);
+  if (m) return { xMin: parseFloat(m[1]), xMax: Infinity };
+
+  return null;
+}
+
+// ── CRITICAL POINTS ──────────────────────────────────────────
+function findCriticalPoints(expr, xMin, xMax, steps) {
+  const h = (xMax - xMin) / steps;
+  const points = [];
+  let prevSign = null;
+
+  for (let i = 1; i < steps; i++) {
+    const x = xMin + i * h;
+    const fPlus  = safeEval(expr, x + h * 0.5);
+    const fMinus = safeEval(expr, x - h * 0.5);
+    if (fPlus == null || fMinus == null) continue;
+    const deriv = fPlus - fMinus;
+    const sign = Math.sign(deriv);
+
+    if (prevSign !== null && prevSign !== 0 && sign !== 0 && prevSign !== sign) {
+      // Bisect to find zero crossing
+      let lo = x - h, hi = x;
+      for (let k = 0; k < 40; k++) {
+        const mid = (lo + hi) / 2;
+        const dMid = (safeEval(expr, mid + 1e-7) || 0) - (safeEval(expr, mid - 1e-7) || 0);
+        if (Math.sign(dMid) === prevSign) lo = mid; else hi = mid;
+      }
+      const cx = (lo + hi) / 2;
+      const cy = safeEval(expr, cx);
+      if (cy != null && cx > xMin && cx < xMax) {
+        // Deduplicate
+        if (!points.some(p => Math.abs(p.x - cx) < h)) {
+          points.push({ x: cx, y: cy });
+        }
+      }
+    }
+    prevSign = sign;
+  }
+  return points;
+}
+
+function classifyPoint(expr, x) {
+  const h = 1e-5;
+  const f0 = safeEval(expr, x);
+  const fp = safeEval(expr, x + h);
+  const fm = safeEval(expr, x - h);
+  if (f0 == null || fp == null || fm == null) return 'Desconocido';
+  const d2 = (fp - 2 * f0 + fm) / (h * h);
+  if (Math.abs(d2) < 0.01) return 'Punto de Silla';
+  return d2 < 0 ? 'Máximo Local' : 'Mínimo Local';
+}
+
+// ── MAIN OPTIMIZER ───────────────────────────────────────────
+function runOptimization() {
+  const funcStr  = document.getElementById('func-input').value.trim();
+  const optType  = document.getElementById('opt-type').value;
+  const precision = parseInt(document.getElementById('precision').value);
+  const useRestr = document.getElementById('use-restrictions').value === 'yes';
+
+  setStatus('running', 'Calculando…');
+
+  setTimeout(() => {
+    try {
+      // ── 1. Parse restrictions → get feasible interval ──
+      let feasXMin = -10, feasXMax = 10; // defaults when no restrictions
+      const restrLineValues = [];   // x values for vertical lines
+      const parsedRestrList = [];   // { xMin, xMax } objects
+
+      if (useRestr) {
+        const n = parseInt(document.getElementById('num-restrictions').value) || 1;
+        for (let i = 0; i < n; i++) {
+          const el = document.getElementById('r' + i);
+          if (!el) continue;
+          const txt = el.value.trim();
+          if (!txt) continue;
+
+          const parsed = parseRestriction(txt);
+          if (!parsed) {
+            setStatus('error', `Restricción R${i+1} no reconocida`);
+            showError(`No se pudo interpretar la restricción R${i+1}: "<b>${txt}</b>"<br><br>Usa formato como: <code>0 &lt;= x &lt;= 5</code>, <code>x &lt;= 4</code>, <code>x &gt;= 1</code>`);
+            return;
+          }
+          parsedRestrList.push(parsed);
+        }
+
+        if (parsedRestrList.length > 0) {
+          feasXMin = parsedRestrList.reduce((acc, r) => r.xMin !== -Infinity ? Math.max(acc, r.xMin) : acc, -Infinity);
+          feasXMax = parsedRestrList.reduce((acc, r) => r.xMax !==  Infinity ? Math.min(acc, r.xMax) : acc,  Infinity);
+
+          if (feasXMin === -Infinity) feasXMin = -10;
+          if (feasXMax ===  Infinity) feasXMax =  10;
+
+          // Collect boundary x values for lines
+          parsedRestrList.forEach(r => {
+            if (r.xMin !== -Infinity && isFinite(r.xMin)) restrLineValues.push(r.xMin);
+            if (r.xMax !==  Infinity && isFinite(r.xMax)) restrLineValues.push(r.xMax);
+          });
+        }
+
+        if (feasXMin >= feasXMax) {
+          setStatus('error', 'Región factible vacía');
+          showError('Las restricciones son incompatibles: la región factible está vacía.<br>Revisa que los límites sean coherentes.');
+          return;
+        }
+      }
+
+      // ── 2. Build full curve for display (a bit wider than feasible) ──
+      const displayMin = feasXMin - (feasXMax - feasXMin) * 0.15;
+      const displayMax = feasXMax + (feasXMax - feasXMin) * 0.15;
+      const step = (displayMax - displayMin) / precision;
+
+      const fullCurve = [];
+      const feasibleCurve = [];
+
+      for (let i = 0; i <= precision; i++) {
+        const x = displayMin + i * step;
+        const y = safeEval(funcStr, x);
+        if (y !== null) {
+          fullCurve.push({ x, y });
+          if (x >= feasXMin - 1e-9 && x <= feasXMax + 1e-9) {
+            feasibleCurve.push({ x, y });
+          }
+        }
+      }
+
+      if (fullCurve.length === 0) {
+        setStatus('error', 'Error en la función');
+        showError('No se pudo evaluar la función. Revisa la sintaxis.<br>Ejemplo válido: <code>x^3 - 6*x^2 + 9*x</code>');
+        return;
+      }
+
+      // ── 3. Find global optimum inside feasible region ──
+      const evalPoints = feasibleCurve.length > 0 ? feasibleCurve : fullCurve;
+      let globalOpt = evalPoints[0];
+      for (const pt of evalPoints) {
+        if (optType === 'max' ? pt.y > globalOpt.y : pt.y < globalOpt.y) globalOpt = pt;
+      }
+
+      // Also check boundary points exactly
+      [feasXMin, feasXMax].forEach(bx => {
+        const by = safeEval(funcStr, bx);
+        if (by !== null) {
+          if (optType === 'max' ? by > globalOpt.y : by < globalOpt.y) globalOpt = { x: bx, y: by };
+        }
+      });
+
+      // ── 4. Find critical points ──
+      const criticals = findCriticalPoints(funcStr, feasXMin, feasXMax, precision);
+
+      // Check if any critical point beats current global
+      criticals.forEach(cp => {
+        if (optType === 'max' ? cp.y > globalOpt.y : cp.y < globalOpt.y) globalOpt = cp;
+      });
+
+      // ── 5. Build results table ──
+      const tableRows = [];
+
+      const fMin = safeEval(funcStr, feasXMin);
+      const fMax = safeEval(funcStr, feasXMax);
+      if (fMin !== null) tableRows.push({ x: feasXMin, y: fMin, type: 'Frontera', typeClass: 'tag-bound' });
+      if (fMax !== null) tableRows.push({ x: feasXMax, y: fMax, type: 'Frontera', typeClass: 'tag-bound' });
+
+      const localPoints = [];
+      criticals.forEach(cp => {
+        const cls = classifyPoint(funcStr, cp.x);
+        const tc  = cls.includes('Máximo') ? 'tag-local' : cls.includes('Mínimo') ? 'tag-local' : 'tag-saddle';
+        tableRows.push({ x: cp.x, y: cp.y, type: cls, typeClass: tc });
+        if (!cls.includes('Silla') && Math.abs(cp.x - globalOpt.x) > 0.05) {
+          localPoints.push({ x: cp.x, y: cp.y });
+        }
+      });
+
+      // Mark global optimum in table
+      let globalMarked = false;
+      tableRows.forEach(r => {
+        if (!globalMarked && Math.abs(r.x - globalOpt.x) < 0.1) {
+          r.type = optType === 'max' ? 'Máximo Global ★' : 'Mínimo Global ★';
+          r.typeClass = 'tag-global';
+          globalMarked = true;
+        }
+      });
+      if (!globalMarked) {
+        tableRows.push({ x: globalOpt.x, y: globalOpt.y, type: optType === 'max' ? 'Máximo Global ★' : 'Mínimo Global ★', typeClass: 'tag-global' });
+      }
+
+      tableRows.sort((a, b) => a.x - b.x);
+
+      // ── 6. Calculus at optimum ──
+      const h2 = 1e-6;
+      const fpA = safeEval(funcStr, globalOpt.x + h2);
+      const fmA = safeEval(funcStr, globalOpt.x - h2);
+      const f0A = safeEval(funcStr, globalOpt.x);
+      const grad = (fpA !== null && fmA !== null) ? ((fpA - fmA) / (2 * h2)).toFixed(6) : 'N/A';
+      const d2   = (fpA !== null && fmA !== null && f0A !== null) ? ((fpA - 2*f0A + fmA) / (h2*h2)).toFixed(4) : 'N/A';
+
+      // ── 7. Render ──
+      // Deduplicate restrLineValues
+      const uniqueLines = [...new Set(restrLineValues.map(v => +v.toFixed(8)))];
+
+      initChart(fullCurve, feasibleCurve, [{ x: globalOpt.x, y: globalOpt.y }], localPoints, uniqueLines);
+
+      renderResults({ globalOpt, optType, feasXMin, feasXMax, grad, d2, tableRows, numLocals: localPoints.length, funcStr });
+
+      setStatus('ready', `Listo — ${criticals.length} punto(s) crítico(s) hallado(s)`);
+
+    } catch (err) {
+      setStatus('error', 'Error inesperado');
+      showError('Error inesperado: ' + err.message);
+      console.error(err);
+    }
+  }, 40);
+}
+
+function renderResults({ globalOpt, optType, feasXMin, feasXMax, grad, d2, tableRows, numLocals, funcStr }) {
+  const label = optType === 'max' ? 'Máximo' : 'Mínimo';
+  const d2num = parseFloat(d2);
+
+  document.getElementById('results-content').innerHTML = `
+    <div class="results-grid">
+      <div class="result-card highlight">
+        <div class="result-card-label">${label} Global — x*</div>
+        <div class="result-card-value purple">${globalOpt.x.toFixed(6)}</div>
+      </div>
+      <div class="result-card highlight">
+        <div class="result-card-label">f(x*) — Valor Óptimo</div>
+        <div class="result-card-value cyan">${globalOpt.y.toFixed(6)}</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">∇f en x*</div>
+        <div class="result-card-value amber">${grad}</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">f''(x*)</div>
+        <div class="result-card-value ${isNaN(d2num) ? '' : d2num < 0 ? 'green' : 'amber'}">${d2}</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">Región Factible</div>
+        <div class="result-card-value" style="font-size:.95rem">[${feasXMin.toFixed(2)}, ${feasXMax.toFixed(2)}]</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">Óptimos Locales</div>
+        <div class="result-card-value amber">${numLocals}</div>
+      </div>
+    </div>
+
+    <div class="analysis-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>x</th>
+            <th>f(x)</th>
+            <th>Clasificación</th>
+            <th>Factible</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows.map(r => `
+            <tr>
+              <td>${r.x.toFixed(6)}</td>
+              <td>${r.y.toFixed(6)}</td>
+              <td class="${r.typeClass}">${r.type}</td>
+              <td style="color:var(--green)">✓</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="font-size:.78rem; color:var(--text-muted); font-family:var(--mono); line-height:1.7;">
+      <strong style="color:var(--text-secondary)">Condición KKT:</strong>
+      ∇f(x*) = ${grad} ≈ 0 &nbsp;|&nbsp;
+      f''(x*) = ${d2} &nbsp;|&nbsp;
+      <strong style="color:var(--text-secondary)">f(x):</strong> ${funcStr}
+    </div>
+  `;
+}
+
+function showError(msg) {
+  document.getElementById('results-content').innerHTML = `
+    <div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <p style="color:#ef4444; line-height:1.6">${msg}</p>
+    </div>`;
+}
+
+function setStatus(state, text) {
+  document.getElementById('status-dot').className = 'status-dot ' + state;
+  document.getElementById('status-text').textContent = text;
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  runOptimization();
+  document.getElementById('func-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runOptimization();
+  });
+});
+</script>
+</body>
+</html>
